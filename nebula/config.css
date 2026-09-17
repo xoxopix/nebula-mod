@@ -5,50 +5,51 @@ without searching through the code directly */
 
 :root {
   /* ✨ Glass & Blur */
-  --nebula-glass: blur(var(--var-nebula-glass-blur))
-    saturate(var(--var-nebula-glass-saturation)) !important;
+  --nebula-glass: blur(var(--var-nebula-glass-blur, 32px))
+    saturate(var(--var-nebula-glass-saturation, 140%)) !important;
   --nebula-color-glass: light-dark(
-    var(--var-nebula-color-glass-light),
-    var(--var-nebula-color-glass-dark)
+    var(--var-nebula-color-glass-light, rgba(255, 255, 255, 0.4)),
+    var(--var-nebula-color-glass-dark, rgba(0, 0, 0, 0.4))
   ) !important;
 
   /* 🖼️ Layout */
-  --nebula-border-radius: var(--var-nebula-border-radius) !important;
-  --nebula-essentials-width: var(--var-nebula-essentials-width) !important;
+  --nebula-border-radius: var(--var-nebula-border-radius, 13px) !important;
+  --nebula-essentials-width: var(--var-nebula-essentials-width, 60px) !important;
   --nebula-workspace-grayscale: var(
-    --var-nebula-workspace-grayscale
+    --var-nebula-workspace-grayscale,
+    100%
   ) !important;
 
   /* 🎨 UI & Website Tint */
   --nebula-ui-tint: light-dark(
-    var(--var-nebula-ui-tint-light),
-    var(--var-nebula-ui-tint-dark)
+    var(--var-nebula-ui-tint-light, rgba(255, 255, 255, 0.2)),
+    var(--var-nebula-ui-tint-dark, rgba(0, 0, 0, 0.2))
   ) !important;
   --nebula-website-tint: light-dark(
-    var(--var-nebula-website-tint-light),
-    var(--var-nebula-website-tint-dark)
+    var(--var-nebula-website-tint-light, rgba(255, 255, 255, 0)),
+    var(--var-nebula-website-tint-dark, rgba(0, 0, 0, 0))
   ) !important;
 
   /* 🔮 Colors */
   --nebula-color-min: light-dark(
-    var(--var-nebula-tabs-minimum-light),
-    var(--var-nebula-tabs-minimum-dark)
+    var(--var-nebula-tabs-minimum-light, rgba(255, 255, 255, 0.1)),
+    var(--var-nebula-tabs-minimum-dark, rgba(0, 0, 0, 0.2))
   ) !important;
   --nebula-color: light-dark(
-    var(--var-nebula-tabs-default-light),
-    var(--var-nebula-tabs-default-dark)
+    var(--var-nebula-tabs-default-light, rgba(255, 255, 255, 0.25)),
+    var(--var-nebula-tabs-default-dark, rgba(0, 0, 0, 0.35))
   ) !important;
   --nebula-color-hover: light-dark(
-    var(--var-nebula-tabs-hover-light),
-    var(--var-nebula-tabs-hover-dark)
+    var(--var-nebula-tabs-hover-light, rgba(255, 255, 255, 0.35)),
+    var(--var-nebula-tabs-hover-dark, rgba(0, 0, 0, 0.45))
   ) !important;
   --nebula-color-selected: light-dark(
-    var(--var-nebula-tabs-selected-light),
-    var(--var-nebula-tabs-selected-dark)
+    var(--var-nebula-tabs-selected-light, rgba(255, 255, 255, 0.45)),
+    var(--var-nebula-tabs-selected-dark, rgba(0, 0, 0, 0.55))
   ) !important;
   --nebula-color-shadow: light-dark(
-    var(--var-nebula-color-shadow-light),
-    var(--var-nebula-color-shadow-dark)
+    var(--var-nebula-color-shadow-light, rgba(255, 255, 255, 0.055)),
+    var(--var-nebula-color-shadow-dark, rgba(0, 0, 0, 0.55))
   ) !important;
 }
 

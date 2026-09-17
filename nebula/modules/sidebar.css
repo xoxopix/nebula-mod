@@ -69,21 +69,19 @@ html[nebula-collapsed-toolbar] {
 .zen-toolbar-background::before,
 .zen-toolbar-background::after {
   outline: none !important;
-  background-color: light-dark(
-    rgb(255 255 255 / 40%),
-    rgb(0 0 0 / 40%)
-  ) !important;
+  background-color: var(--nebula-color-glass) !important;
 }
 
 /* Titlebar styling */
-html[nebula-compact-mode] #titlebar > .zen-browser-generic-background {
+:is(html[nebula-compact-mode], :root[zen-compact-mode="true"], #main-window[zen-compact-mode="true"]) #titlebar > .zen-browser-generic-background {
   padding: 8px;
-  border-radius: 13px !important;
+  border-radius: var(--nebula-border-radius, 13px) !important;
   background-color: transparent !important;
   backdrop-filter: var(--nebula-glass) !important;
+  -webkit-backdrop-filter: var(--nebula-glass) !important;
 }
 
-:root[zen-right-side="true"][nebula-compact-mode] #titlebar {
+:is(html[nebula-compact-mode], :root[zen-compact-mode="true"]):root[zen-right-side="true"] #titlebar {
   left: auto !important;
   right: var(--zen-element-separation) !important;
 }
@@ -98,7 +96,7 @@ html[nebula-compact-mode] #titlebar > .zen-browser-generic-background {
 
 /* -------------------- SINGLE TOOLBAR -------------------- */
 
-html[nebula-single-toolbar][nebula-compact-mode] #titlebar {
+:is(html[nebula-single-toolbar][nebula-compact-mode], :root[zen-compact-mode="true"]) #titlebar {
   top: var(--zen-element-separation) !important;
   left: var(--zen-element-separation) !important;
   height: calc(100% - (var(--zen-element-separation) * 2)) !important;
