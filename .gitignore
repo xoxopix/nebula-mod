@@ -1,0 +1,13 @@
+# Temporales y respaldos
+*.bak
+*.tmp
+*.log
+*.sqlite-wal
+*.sqlite-shm
+*~
+
+# Sistema y editores
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

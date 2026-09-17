@@ -1,0 +1,33 @@
+{
+  "id": "nebula-mod",
+  "homepage": "https://github.com/xoxopix/nebula-mod",
+  "author": "EVA 01",
+  "name": "Nebula Mod",
+  "description": "Edición completa de Nebula con iconos normalizados, Better PDF corregido, miniaturas de medios independientes y optimizaciones de rendimiento para Zen Browser.",
+  "version": "1.0.0",
+  "style": {
+    "chrome": "userChrome.css",
+    "content": "userContent.css"
+  },
+  "scripts": {
+    "js/nebula.uc.js": {
+      "name": "Core script",
+      "description": "Script central con soporte para reproductor multimedia, polyfills y optimizaciones de red y rendimiento.",
+      "include": [
+        "chrome://browser/content/browser.xhtml"
+      ]
+    }
+  },
+  "preferences": "preferences.json",
+  "tags": [
+    "content",
+    "chrome",
+    "minimal",
+    "icons",
+    "performance",
+    "theme"
+  ],
+  "fork": [
+    "zen"
+  ]
+}

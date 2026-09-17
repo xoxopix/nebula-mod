@@ -1,0 +1,456 @@
+/* ------------ BETTER PDF VIEWER (NEBULA EDITION) ----------- */
+
+/* ====== CSS Variables ====== */
+#outerContainer,
+#mainContainer,
+#viewerContainer,
+#toolbarContainer,
+#sidebarContainer,
+#secondaryToolbar {
+  --natsumi-primary-color: #00c9ff;
+  --natsumi-surface-bg: light-dark(rgba(244, 244, 247, 0.8), rgba(24, 24, 28, 0.78));
+  --natsumi-menu-bg: light-dark(rgba(255, 255, 255, 0.85), rgba(31, 31, 37, 0.85));
+  --natsumi-surface-border: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12));
+  --natsumi-surface-shadow: light-dark(rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.6));
+}
+
+/* ====== Reset fake overlays ====== */
+#mainContainer::before,
+.sidebarOpen::before {
+  display: none !important;
+}
+
+/* ====== Body ====== */
+body:has(#outerContainer) {
+  background: transparent !important;
+}
+
+/* ====== Viewer container ====== */
+#viewerContainer {
+  inset: 0 !important;
+  background: transparent !important;
+}
+
+#viewerContainer #viewer > .page:first-of-type,
+#viewerContainer #viewer .spread:first-of-type .page {
+  margin-top: 54px !important;
+  transition: margin-top 0.3s ease;
+}
+
+.toolbar {
+  width: 100%;
+  height: 10px;
+}
+
+/* ====== Toolbar (top floating pill) ====== */
+#toolbarContainer {
+  position: absolute !important;
+  top: 8px !important;
+  left: 50% !important;
+  transform: translate(-50%, 0) !important;
+  width: fit-content !important;
+  max-width: calc(100% - 24px) !important;
+  background: var(--natsumi-surface-bg, rgba(24, 24, 28, 0.78)) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-radius: 12px !important;
+  padding: 4px 10px !important;
+  height: calc(var(--toolbar-height, 32px) + 8px) !important;
+  border: 1px solid var(--natsumi-surface-border, rgba(255, 255, 255, 0.12)) !important;
+  box-shadow: 0 6px 24px var(--natsumi-surface-shadow, rgba(0, 0, 0, 0.5)) !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  z-index: 9999 !important;
+  animation: pdfjs-appear 0.3s ease;
+}
+
+#toolbarViewer {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: fit-content !important;
+  height: 100% !important;
+  padding: 0 !important;
+  position: relative !important;
+  background: transparent !important;
+}
+
+#toolbarViewerLeft,
+#toolbarViewerMiddle,
+#toolbarViewerRight {
+  display: flex !important;
+  align-items: center !important;
+  position: static !important;
+  height: 100% !important;
+  background: transparent !important;
+}
+
+#toolbarViewerLeft { justify-content: flex-start !important; gap: 3px !important; }
+#toolbarViewerMiddle { justify-content: center !important; gap: 3px !important; }
+#toolbarViewerRight { justify-content: flex-end !important; gap: 3px !important; }
+
+/* ====== Hide loading bar ====== */
+#loadingBar {
+  display: none !important;
+}
+
+/* ====== Toolbar buttons ====== */
+.toolbarButton {
+  border-radius: 8px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 4px !important;
+  box-sizing: border-box !important;
+  transition: background-color 0.2s ease !important;
+  color: light-dark(#1a1a1a, #f0f0f0) !important;
+  background: transparent !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.toolbarButton:hover {
+  background-color: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.12)) !important;
+}
+
+.toolbarButton.toggled,
+.toolbarButton[aria-expanded="true"] {
+  background-color: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.2)) !important;
+}
+
+.toolbarButton::before {
+  mask-size: 16px 16px !important;
+  mask-position: center !important;
+  mask-repeat: no-repeat !important;
+  -webkit-mask-size: 16px 16px !important;
+  -webkit-mask-position: center !important;
+  -webkit-mask-repeat: no-repeat !important;
+}
+
+.verticalToolbarSeparator {
+  display: inline-block !important;
+  width: 1px !important;
+  min-width: 1px !important;
+  height: 16px !important;
+  background-color: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15)) !important;
+  margin: 0 6px !important;
+  border: none !important;
+  align-self: center !important;
+}
+
+#downloadButton::before,
+#secondaryDownload::before {
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8.75 1.75a.75.75 0 0 0-1.5 0v6.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V1.75zM2.5 11.75a.75.75 0 0 0-1.5 0v1.5A1.75 1.75 0 0 0 2.75 15h10.5A1.75 1.75 0 0 0 15 13.25v-1.5a.75.75 0 0 0-1.5 0v1.5a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25v-1.5z' fill='black'/%3E%3C/svg%3E") !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M8.75 1.75a.75.75 0 0 0-1.5 0v6.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V1.75zM2.5 11.75a.75.75 0 0 0-1.5 0v1.5A1.75 1.75 0 0 0 2.75 15h10.5A1.75 1.75 0 0 0 15 13.25v-1.5a.75.75 0 0 0-1.5 0v1.5a.25.25 0 0 1-.25.25H2.75a.25.25 0 0 1-.25-.25v-1.5z' fill='black'/%3E%3C/svg%3E") !important;
+}
+
+/* ====== Secondary Toolbar (More options menu) ====== */
+#secondaryToolbar {
+  padding: 6px !important;
+  top: 48px !important;
+  right: 0 !important;
+  background: var(--natsumi-menu-bg, rgba(31, 31, 37, 0.85)) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--natsumi-surface-border, rgba(255, 255, 255, 0.12)) !important;
+  box-shadow: 0 14px 38px var(--natsumi-surface-shadow, rgba(0, 0, 0, 0.6)) !important;
+  min-width: 230px !important;
+  z-index: 100000 !important;
+  animation: secondary-appear 0.25s ease;
+}
+
+#secondaryToolbar.hidden {
+  animation: none !important;
+}
+
+#secondaryToolbar::before,
+#secondaryToolbar::after {
+  display: none !important;
+}
+
+#secondaryToolbar * {
+  background-color: transparent !important;
+}
+
+#secondaryToolbarButtonContainer {
+  background: transparent !important;
+  max-height: 80vh !important;
+  scrollbar-width: thin !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+#secondaryToolbarButtonContainer .secondaryToolbarButton,
+#secondaryToolbarButtonContainer .toolbarButton {
+  border-radius: 8px !important;
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  height: auto !important;
+  min-height: 30px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  color: light-dark(#1a1a1a, #f5f5f5) !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  text-align: left !important;
+  transition: background-color 0.15s ease !important;
+}
+
+#secondaryToolbarButtonContainer .secondaryToolbarButton:hover,
+#secondaryToolbarButtonContainer .toolbarButton:hover {
+  background-color: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1)) !important;
+}
+
+#secondaryToolbarButtonContainer .secondaryToolbarButton[aria-checked="true"],
+#secondaryToolbarButtonContainer .toolbarButton.toggled {
+  background-color: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.18)) !important;
+  font-weight: 600 !important;
+}
+
+#secondaryToolbarButtonContainer .horizontalToolbarSeparator {
+  border-top: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1)) !important;
+  margin: 4px 2px !important;
+}
+
+/* ====== Sidebar: Dynamic In-Flow Height (fits exact page count) ====== */
+#sidebarContainer,
+#outerContainer #sidebarContainer,
+#outerContainer.sidebarOpen #sidebarContainer,
+html.sidebarOpen #sidebarContainer {
+  position: absolute !important;
+  top: 50px !important;
+  bottom: auto !important;
+  inset-block: auto !important;
+  inset-block-start: 50px !important;
+  inset-block-end: auto !important;
+  height: fit-content !important;
+  height: -moz-fit-content !important;
+  max-height: calc(100vh - 65px) !important;
+  min-height: 0 !important;
+  width: var(--sidebar-width, 250px) !important;
+  background: var(--natsumi-surface-bg, rgba(24, 24, 28, 0.78)) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--natsumi-surface-border, rgba(255, 255, 255, 0.12)) !important;
+  box-shadow: 0 10px 32px var(--natsumi-surface-shadow, rgba(0, 0, 0, 0.6)) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+  z-index: 99999 !important;
+  transition: left 0.25s cubic-bezier(0.2, 0, 0, 1), opacity 0.2s ease !important;
+}
+
+#outerContainer.sidebarOpen #sidebarContainer,
+html.sidebarOpen #sidebarContainer {
+  left: 12px !important;
+  inset-inline-start: 12px !important;
+  opacity: 1 !important;
+}
+
+#sidebarResizer {
+  display: none !important;
+}
+
+#sidebarContainer > *,
+#toolbarSidebar,
+#sidebarHeader,
+.page-manager,
+.page-manager-toolbar,
+#pageManagerToolbar {
+  position: relative !important;
+  inset: auto !important;
+  inset-block: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  height: auto !important;
+  min-height: 36px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 6px 8px !important;
+  border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08)) !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  box-sizing: border-box !important;
+}
+
+#sidebarContent,
+#outerContainer #sidebarContent {
+  position: relative !important;
+  inset: auto !important;
+  inset-block: auto !important;
+  inset-inline: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  background: transparent !important;
+  flex: 0 1 auto !important;
+  margin: 0 !important;
+  padding: 6px 0 !important;
+  box-shadow: none !important;
+  scrollbar-width: thin !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: calc(100vh - 150px) !important;
+}
+
+#thumbnailView,
+#outlineView,
+#attachmentsView,
+#layersView,
+#outerContainer #thumbnailView {
+  position: relative !important;
+  inset: auto !important;
+  inset-block: auto !important;
+  inset-inline: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 4px 0 8px 0 !important;
+  overflow: visible !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}
+
+/* Force transparency inside sidebar */
+#sidebarContainer * {
+  background-color: transparent !important;
+  box-shadow: none !important;
+  color: light-dark(#1a1a1a, #f5f5f5) !important;
+}
+
+/* Sidebar tree items */
+#sidebarContainer .treeItem a,
+#sidebarContainer .treeItem .treeItems {
+  border-radius: 6px !important;
+}
+
+#sidebarContainer .treeItem a:hover {
+  background-color: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* Thumbnails */
+#thumbnailView > a,
+#sidebarContainer .thumbnail {
+  position: relative !important;
+  margin: 0 auto 16px auto !important;
+  border-radius: 8px !important;
+  transition: transform 0.2s ease;
+  float: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  height: auto !important;
+}
+
+#sidebarContainer .thumbnail:hover {
+  transform: scale(1.02);
+}
+
+#sidebarContainer .thumbnail.selected .thumbnailImage {
+  box-shadow: 0 0 0 2px #00c9ff !important;
+  border-radius: 6px !important;
+}
+
+/* ====== Scale selector ====== */
+#scaleSelectContainer {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08)) !important;
+  border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12)) !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+#scaleSelectContainer:hover {
+  background-color: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.14)) !important;
+}
+
+#scaleSelect {
+  appearance: none !important;
+  -moz-appearance: none !important;
+  background: transparent !important;
+  color: light-dark(#1a1a1a, #f0f0f0) !important;
+  border: none !important;
+  padding: 2px 24px 2px 8px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  outline: none !important;
+}
+
+#scaleSelect option {
+  background-color: light-dark(#ffffff, #1e1e24) !important;
+  color: light-dark(#1a1a1a, #f0f0f0) !important;
+}
+
+/* ====== Page number input ====== */
+#pageNumber {
+  border-radius: 8px !important;
+  background-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08)) !important;
+  border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12)) !important;
+  color: light-dark(#1a1a1a, #f0f0f0) !important;
+  padding: 2px 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+}
+
+#pageNumber:focus {
+  border-color: #00c9ff !important;
+  background-color: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.14)) !important;
+}
+
+#numPages {
+  color: light-dark(#333, #ccc) !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  margin: 0 4px !important;
+}
+
+/* ====== Separators ====== */
+.verticalToolbarSeparator,
+.splitToolbarButtonSeparator,
+.horizontalToolbarSeparator {
+  border-color: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* ====== Document Properties Dialog ====== */
+#documentPropertiesDialog {
+  background: var(--natsumi-menu-bg, #1f1f25) !important;
+  border-radius: 12px !important;
+  border: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.12)) !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+#documentPropertiesClose {
+  border-radius: 8px !important;
+  background-color: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.12)) !important;
+}
+
+/* ====== Animations ====== */
+@keyframes pdfjs-appear {
+  from { opacity: 0; transform: translate(-50%, -6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes secondary-appear {
+  from { opacity: 0; margin-top: -6px; transform: scale(0.98); }
+  to   { opacity: 1; margin-top: 0;    transform: scale(1); }
+}

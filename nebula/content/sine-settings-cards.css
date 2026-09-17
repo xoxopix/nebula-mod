@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Recuadros y Estilo Nativo para la Página de Sine Mods en Configuración
+   Replica exactamente el diseño de tarjetas (moz-card) de Cuenta y Sincronización
+   ========================================================================== */
+
+@-moz-document url-prefix("about:preferences"), url-prefix("chrome://browser/content/preferences/") {
+
+  /* Recuadros principales (Marketplace y Mods Instalados) */
+  #sineInstallationGroup,
+  #sineInstalledGroup {
+    background-color: var(--in-content-box-background, light-dark(#ffffff, #23222b)) !important;
+    border: 1px solid var(--in-content-box-border-color, var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1)))) !important;
+    border-radius: var(--card-border-radius, 8px) !important;
+    padding: 18px 22px !important;
+    margin-top: 14px !important;
+    margin-bottom: 22px !important;
+    box-shadow: var(--card-box-shadow, 0 1px 3px rgba(0, 0, 0, 0.12)) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Encabezados dentro de los recuadros */
+  #sineInstalledHeader,
+  #sineInstallationHeader {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+  }
+
+  #sineInstalledHeader h2,
+  #sineMarketplaceHeader h2 {
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+  }
+
+  /* Barra de búsqueda y botón de refrescar del Marketplace */
+  #sineInstallationHeader .sineCKSOption-input {
+    background-color: var(--in-content-box-background-odd, light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.05))) !important;
+    border: 1px solid var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15))) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    min-height: 32px !important;
+    color: inherit !important;
+    outline: none !important;
+  }
+
+  #sineInstallationHeader .sineCKSOption-input:focus {
+    border-color: var(--color-accent-primary, #00ddff) !important;
+    box-shadow: 0 0 0 2px var(--color-accent-primary, rgba(0, 221, 255, 0.3)) !important;
+  }
+
+  #sineMarketplaceRefreshButton {
+    min-height: 32px !important;
+    height: 32px !important;
+    width: 32px !important;
+    border-radius: 6px !important;
+    margin-left: 6px !important;
+    border: 1px solid var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15))) !important;
+    background-color: var(--in-content-button-background, light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.06))) !important;
+    cursor: pointer !important;
+  }
+
+  #sineMarketplaceRefreshButton:hover {
+    background-color: var(--in-content-button-background-hover, light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.12))) !important;
+  }
+
+  /* Tarjetas individuales de mods instalados */
+  .sineItem {
+    background-color: var(--in-content-box-background-odd, light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.04))) !important;
+    border: 1px solid var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08))) !important;
+    border-radius: 8px !important;
+    padding: 14px 16px !important;
+    margin-bottom: 10px !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+  }
+
+  .sineItem:hover {
+    background-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.07)) !important;
+    border-color: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15)) !important;
+  }
+
+  /* Tarjetas individuales del Marketplace */
+  .sineInstallationItem {
+    background-color: var(--in-content-box-background-odd, light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.04))) !important;
+    border: 1px solid var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08))) !important;
+    border-radius: 8px !important;
+    padding: 14px 16px !important;
+    box-shadow: none !important;
+    transition: background-color 0.15s ease, border-color 0.15s ease !important;
+  }
+
+  .sineInstallationItem:hover {
+    background-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.07)) !important;
+    border-color: light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15)) !important;
+  }
+
+  /* Fila de instalación personalizada (URL/input) */
+  #sineInstallationCustom {
+    display: flex !important;
+    align-items: center !important;
+    margin-top: 14px !important;
+    gap: 8px !important;
+  }
+
+  #sineInstallationCustom input {
+    background-color: var(--in-content-box-background-odd, light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.05))) !important;
+    border: 1px solid var(--in-content-border-color, light-dark(rgba(0, 0, 0, 0.15), rgba(255, 255, 255, 0.15))) !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    color: inherit !important;
+    min-height: 32px !important;
+    margin: 0 !important;
+  }
+
+  /* Botones generales de Sine */
+  #sineInstalledGroup button:not(.sinePreferenceToggle),
+  #sineInstallationGroup button:not(#sineMarketplaceRefreshButton) {
+    border-radius: 6px !important;
+    transition: background-color 0.15s ease !important;
+  }
+
+  /* Diálogo emergente de configuración de mods */
+  dialog.sineItemPreferenceDialog {
+    background-color: var(--in-content-box-background, light-dark(#ffffff, #23222b)) !important;
+    border: 1px solid var(--in-content-box-border-color, var(--in-content-border-color, rgba(255, 255, 255, 0.15))) !important;
+    border-radius: 12px !important;
+    color: inherit !important;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5) !important;
+    padding: 20px !important;
+  }
+}
