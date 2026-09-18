@@ -208,9 +208,23 @@
       if (e?.type === "TabAttrModified" && !e.detail.changed.includes("image"))
         return;
 
-      const tab = gBrowser.selectedTab;
-      const iconUrl = tab?.getAttribute("image");
+      const tab = gBrowser?.selectedTab;
+      if (!tab) return;
+
+      const iconUrl = tab.getAttribute("image");
       if (!iconUrl) return;
+
+      // Skip internal browser pages, settings, chrome URLs, and resource icons
+      const uri = tab.linkedBrowser?.currentURI?.spec || "";
+      if (
+        uri.startsWith("about:") ||
+        uri.startsWith("chrome:") ||
+        uri.startsWith("resource:") ||
+        iconUrl.startsWith("chrome://") ||
+        iconUrl.startsWith("resource://")
+      ) {
+        return;
+      }
 
       this._faviconCache = this._faviconCache || new Map();
       if (this._faviconCache.has(iconUrl)) {
@@ -574,17 +588,6 @@
         rect.bottom > 0 &&
         rect.top < window.innerHeight;
 
-      const changed =
-        rect.top !== this.lastRect.top ||
-        rect.left !== this.lastRect.left ||
-        rect.width !== this.lastRect.width ||
-        rect.height !== this.lastRect.height;
-
-      if (!changed && this.lastVisible === isVisible) {
-        this.animationFrameId = requestAnimationFrame(this.update);
-        return;
-      }
-
       this.lastRect = {
         top: rect.top,
         left: rect.left,
@@ -608,8 +611,6 @@
       } else {
         this.hideOverlay();
       }
-
-      this.animationFrameId = requestAnimationFrame(this.update);
     }
 
     hideOverlay() {
@@ -623,6 +624,11 @@
     startLiveTracking() {
       this.stopLiveTracking();
       this.update();
+      if (!this.resizeObserver && window.ResizeObserver) {
+        this.resizeObserver = new ResizeObserver(() => this.update());
+        this.resizeObserver.observe(this.titlebar);
+      }
+      window.addEventListener("resize", this.update, { passive: true });
     }
 
     stopLiveTracking() {
@@ -630,6 +636,11 @@
         cancelAnimationFrame(this.animationFrameId);
         this.animationFrameId = null;
       }
+      if (this.resizeObserver) {
+        this.resizeObserver.disconnect();
+        this.resizeObserver = null;
+      }
+      window.removeEventListener("resize", this.update);
     }
 
     destroy() {
@@ -1616,7 +1627,13 @@
         )
           return;
         const uri = tab.linkedBrowser?.currentURI?.spec || "";
-        if (!uri || uri === "about:newtab" || uri === "about:blank") return;
+        if (
+          !uri ||
+          uri.startsWith("about:") ||
+          uri.startsWith("chrome:") ||
+          uri.startsWith("resource:")
+        )
+          return;
 
         const activeWs = window.gZenWorkspaces?.activeWorkspace || "default";
         const wsKey = `nebula.last-tab-uri.${activeWs}`;
@@ -1903,7 +1920,7 @@
   // Register Nebula Modules
   Nebula.register(NebulaPolyfillModule);
   Nebula.register(NebulaGradientSliderModule);
-  Nebula.register(NebulaTitlebarBackgroundModule);
+  //Nebula.register(NebulaTitlebarBackgroundModule); // NOT NEEDED ANYMORE (Zen handles titlebar background natively)
   //Nebula.register(NebulaNavbarBackgroundModule); NOT NEEDED ANYMORE
   Nebula.register(NebulaURLBarBackgroundModule);
   Nebula.register(NebulaMediaCoverArtModule);
