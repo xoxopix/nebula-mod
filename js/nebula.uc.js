@@ -205,26 +205,41 @@
     }
 
     async updateFaviconColor(e) {
-      if (e?.type === "TabAttrModified" && !e.detail.changed.includes("image"))
+      if (
+        e?.type === "TabAttrModified" &&
+        e.detail?.changed &&
+        !e.detail.changed.some((attr) => ["image", "icon"].includes(attr))
+      ) {
         return;
+      }
 
       const tab = gBrowser?.selectedTab;
       if (!tab) return;
 
-      const iconUrl = tab.getAttribute("image");
-      if (!iconUrl) return;
+      const iconUrl =
+        tab.image ||
+        tab.getAttribute("image") ||
+        tab.querySelector(".tab-icon-image")?.src ||
+        (window.gBrowser && typeof gBrowser.getIcon === "function"
+          ? gBrowser.getIcon(tab)
+          : null);
 
-      // Skip internal browser pages, settings, chrome URLs, and resource icons
       const uri = tab.linkedBrowser?.currentURI?.spec || "";
+
+      // Internal pages: remove custom favicon color so fallback (Zen primary color) applies cleanly
       if (
         uri.startsWith("about:") ||
         uri.startsWith("chrome:") ||
         uri.startsWith("resource:") ||
-        iconUrl.startsWith("chrome://") ||
-        iconUrl.startsWith("resource://")
+        (iconUrl &&
+          (iconUrl.startsWith("chrome://") ||
+            iconUrl.startsWith("resource://")))
       ) {
+        this.root.style.removeProperty("--nebula-selected-favicon-color");
         return;
       }
+
+      if (!iconUrl) return;
 
       this._faviconCache = this._faviconCache || new Map();
       if (this._faviconCache.has(iconUrl)) {
@@ -239,27 +254,53 @@
       if (this._faviconTimeout) clearTimeout(this._faviconTimeout);
       this._faviconTimeout = setTimeout(async () => {
         try {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.src = iconUrl;
-          await new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
+          // If the tab already has the icon rendered in the DOM, we can draw it directly
+          const existingIcon = tab.querySelector(".tab-icon-image");
+          let img = null;
+
+          if (
+            existingIcon &&
+            (existingIcon.naturalWidth > 0 || existingIcon.width > 0)
+          ) {
+            img = existingIcon;
+          } else {
+            const newImg = new Image();
+            newImg.src = iconUrl;
+            await new Promise((resolve) => {
+              if (newImg.complete && newImg.naturalWidth > 0) {
+                resolve();
+                return;
+              }
+              newImg.onload = resolve;
+              newImg.onerror = resolve;
+            });
+            if (newImg.naturalWidth > 0) {
+              img = newImg;
+            }
+          }
+
+          if (!img) return;
 
           const size = 16;
           if (!this._faviconCanvas) {
             this._faviconCanvas = document.createElement("canvas");
             this._faviconCanvas.width = size;
             this._faviconCanvas.height = size;
-            this._faviconCtx = this._faviconCanvas.getContext("2d");
+            this._faviconCtx = this._faviconCanvas.getContext("2d", {
+              willReadFrequently: true,
+            });
           }
 
           const ctx = this._faviconCtx;
           ctx.clearRect(0, 0, size, size);
           ctx.drawImage(img, 0, 0, size, size);
 
-          const data = ctx.getImageData(0, 0, size, size).data;
+          let data;
+          try {
+            data = ctx.getImageData(0, 0, size, size).data;
+          } catch (err) {
+            return;
+          }
           const counts = [];
 
           for (let i = 0; i < data.length; i += 4) {

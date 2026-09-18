@@ -231,7 +231,13 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
   /* Exclude essentials tabs and multi selected tabs */
 
   @media (-moz-pref("nebula-active-tab-glow", 1)) {
-    &:not(.zen-essentials-container .tabbrowser-tab) .tab-background::after {
+    overflow: visible !important;
+
+    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background {
+      overflow: visible !important;
+    }
+
+    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background::after {
       content: "";
       position: absolute;
       bottom: -6px;
@@ -239,21 +245,24 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
       transform: translateX(-50%);
       width: 160%;
       height: 120%;
-      background:
-        /*linear-gradient(
-          to top,
-          rgba(0, 0, 0, 0.35),
-          transparent 20px
-        ),*/ radial-gradient(
+      pointer-events: none;
+      z-index: 1;
+      background: radial-gradient(
         ellipse at bottom center,
-        color-mix(in srgb, var(--zen-primary-color) 30%, transparent) 0%,
+        color-mix(in srgb, var(--zen-primary-color) 45%, transparent) 0%,
         transparent 70%
       );
     }
   }
 
   @media (-moz-pref("nebula-active-tab-glow", 2)) {
-    &:not(.zen-essentials-container .tabbrowser-tab) .tab-background::after {
+    overflow: visible !important;
+
+    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background {
+      overflow: visible !important;
+    }
+
+    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background::after {
       content: "";
       position: absolute;
       bottom: -6px;
@@ -261,11 +270,13 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
       transform: translateX(-50%);
       width: 160%;
       height: 120%;
+      pointer-events: none;
+      z-index: 1;
       background: radial-gradient(
         ellipse at bottom center,
         color-mix(
             in srgb,
-            var(--nebula-selected-favicon-color) 30%,
+            var(--nebula-selected-favicon-color, var(--zen-primary-color)) 45%,
             transparent
           )
           0%,
