@@ -429,7 +429,7 @@ html[nebula-collapsed-toolbar]
 .tabbrowser-tab::before {
   content: "";
   position: absolute;
-  inset: 3px;
+  inset: 0 !important;
   background: linear-gradient(
     45deg,
     color-mix(in srgb, var(--zen-primary-color) 5%, black),
@@ -440,8 +440,8 @@ html[nebula-collapsed-toolbar]
     color-mix(in srgb, var(--zen-primary-color) 15%, black)
   );
   background-size: 200% 200%;
-  border-radius: max(0px, calc(var(--nebula-border-radius) - 3px));
-  clip-path: inset(0 round max(0px, calc(var(--nebula-border-radius) - 3px)));
+  border-radius: var(--nebula-border-radius) !important;
+  clip-path: inset(0 round var(--nebula-border-radius)) !important;
   animation: tab-hover-gradient 3.5s linear infinite paused;
   opacity: 0;
   filter: blur(10px) brightness(1) contrast(120%);
@@ -453,9 +453,9 @@ html[nebula-collapsed-toolbar]
 
 /* Collapsed toolbar state */
 html[nebula-collapsed-toolbar] .tabbrowser-tab::before {
-  inset: 2px 6px;
-  border-radius: max(0px, calc(var(--nebula-border-radius) - 4px));
-  clip-path: inset(0 round max(0px, calc(var(--nebula-border-radius) - 4px)));
+  inset: 0 !important;
+  border-radius: var(--nebula-border-radius) !important;
+  clip-path: inset(0 round var(--nebula-border-radius)) !important;
 }
 
 /* Gradient Style Variations */
