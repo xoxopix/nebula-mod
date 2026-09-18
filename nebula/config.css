@@ -14,6 +14,8 @@ without searching through the code directly */
 
   /* 🖼️ Layout */
   --nebula-border-radius: var(--var-nebula-border-radius, 13px) !important;
+  --tab-border-radius: var(--nebula-border-radius) !important;
+  --toolbarbutton-border-radius: var(--nebula-border-radius) !important;
   --nebula-essentials-width: var(--var-nebula-essentials-width, 60px) !important;
   --nebula-workspace-grayscale: var(
     --var-nebula-workspace-grayscale,
