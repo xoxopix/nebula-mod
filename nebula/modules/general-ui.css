@@ -77,6 +77,12 @@ browser {
   }
 
   /* Compensación simétrica nativa para que la web no se mueva al bajar la barra en NoGaps */
+  /* Opción B: transición sincronizada con Zen (0.15s ease-in-out) + aceleración GPU para eliminar parpadeo */
+  .browserSidebarContainer:is(.deck-selected, [zen-split="true"]) .browserContainer {
+    transition: margin-top 0.15s ease-in-out !important;
+    will-change: margin-top !important;
+  }
+
   #tabbrowser-tabpanels[has-toolbar-hovered] .browserContainer {
     --margin-top-fix: calc(-1 * var(--zen-toolbar-height-with-bookmarks, 38px)) !important;
     margin-top: var(--margin-top-fix) !important;
@@ -89,8 +95,8 @@ browser {
 
   :root[zen-single-toolbar="true"] {
     #zen-appcontent-navbar-wrapper {
-      min-height: 0.1px !important;
-      height: 0.1px !important;
+      min-height: 0px !important;
+      height: 0px !important;
     }
 
     #zen-appcontent-navbar-wrapper:is(
@@ -108,8 +114,8 @@ browser {
   @media -moz-pref("zen.view.compact.hide-toolbar") {
     :root[zen-compact-mode="true"] {
       #zen-appcontent-navbar-wrapper {
-        min-height: 0.1px !important;
-        height: 0.1px !important;
+        min-height: 0px !important;
+        height: 0px !important;
       }
 
       #zen-appcontent-navbar-wrapper:is(
