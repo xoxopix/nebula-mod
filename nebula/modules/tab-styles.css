@@ -226,66 +226,132 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
 
 /* ------------------- Active Tab Glow ------------------- */
 
-.tabbrowser-tab[selected="true"]:not([multiselected="true"]),
-.tabbrowser-tab[visuallyselected="true"]:not([multiselected="true"]) {
-  /* Exclude essentials tabs and multi selected tabs */
-
-  @media (-moz-pref("nebula-active-tab-glow", 1)) {
+@media (-moz-pref("nebula-active-tab-glow", 1)) {
+  .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
     overflow: visible !important;
 
-    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background {
+    .tab-background {
       overflow: visible !important;
+
+      &::after {
+        content: "" !important;
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: inherit !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+        background: radial-gradient(
+          ellipse at bottom center,
+          color-mix(in srgb, var(--zen-primary-color) 65%, transparent) 0%,
+          transparent 75%
+        ) !important;
+        box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color) 50%, transparent) !important;
+      }
     }
 
-    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background::after {
-      content: "";
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 160%;
-      height: 120%;
-      pointer-events: none;
-      z-index: 1;
+    &:hover .tab-background::after {
+      opacity: 0 !important;
+    }
+  }
+}
+
+@media (-moz-pref("nebula-active-tab-glow", 2)) {
+  .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
+    overflow: visible !important;
+
+    .tab-background {
+      overflow: visible !important;
+
+      &::after {
+        content: "" !important;
+        position: absolute !important;
+        inset: 0 !important;
+        border-radius: inherit !important;
+        pointer-events: none !important;
+        z-index: 1 !important;
+        background: radial-gradient(
+          ellipse at bottom center,
+          color-mix(
+              in srgb,
+              var(--nebula-selected-favicon-color, var(--zen-primary-color)) 70%,
+              transparent
+            )
+            0%,
+          transparent 75%
+        ) !important;
+        box-shadow: 0 4px 18px color-mix(
+          in srgb,
+          var(--nebula-selected-favicon-color, var(--zen-primary-color)) 60%,
+          transparent
+        ) !important;
+      }
+    }
+
+    &:hover .tab-background::after {
+      opacity: 0 !important;
+    }
+  }
+}
+
+:root[nebula-active-tab-glow="1"] .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
+  overflow: visible !important;
+
+  .tab-background {
+    overflow: visible !important;
+
+    &::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: inherit !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
       background: radial-gradient(
         ellipse at bottom center,
-        color-mix(in srgb, var(--zen-primary-color) 45%, transparent) 0%,
-        transparent 70%
-      );
+        color-mix(in srgb, var(--zen-primary-color) 65%, transparent) 0%,
+        transparent 75%
+      ) !important;
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color) 50%, transparent) !important;
     }
   }
 
-  @media (-moz-pref("nebula-active-tab-glow", 2)) {
+  &:hover .tab-background::after {
+    opacity: 0 !important;
+  }
+}
+
+:root[nebula-active-tab-glow="2"] .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]),
+:root:has([nebula-active-tab-glow="2"]) .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
+  overflow: visible !important;
+
+  .tab-background {
     overflow: visible !important;
 
-    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background {
-      overflow: visible !important;
-    }
-
-    &:not(.zen-essentials-container .tabbrowser-tab, #zen-essentials-container .tabbrowser-tab, [zen-essential="true"]) .tab-background::after {
-      content: "";
-      position: absolute;
-      bottom: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 160%;
-      height: 120%;
-      pointer-events: none;
-      z-index: 1;
+    &::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: inherit !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
       background: radial-gradient(
         ellipse at bottom center,
         color-mix(
             in srgb,
-            var(--nebula-selected-favicon-color, var(--zen-primary-color)) 45%,
+            var(--nebula-selected-favicon-color, var(--zen-primary-color)) 70%,
             transparent
           )
           0%,
-        transparent 70%
-      );
+        transparent 75%
+      ) !important;
+      box-shadow: 0 4px 18px color-mix(
+        in srgb,
+        var(--nebula-selected-favicon-color, var(--zen-primary-color)) 60%,
+        transparent
+      ) !important;
     }
   }
 
-  /* Hide glow on hover */
   &:hover .tab-background::after {
     opacity: 0 !important;
   }

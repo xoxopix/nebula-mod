@@ -148,17 +148,22 @@
     }
 
     async init() {
-      // Wait until gBrowser is available
-      if (!window.gBrowser) {
-        await new Promise((resolve) => {
-          const check = setInterval(() => {
-            if (window.gBrowser?.tabContainer) {
-              clearInterval(check);
-              resolve();
-            }
-          }, 50);
-        });
+      // Wait until gBrowser and tabContainer are available
+      while (!window.gBrowser?.tabContainer) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
+
+      // Sync active tab glow preference attribute to root
+      const updateGlowPref = () => {
+        try {
+          const val = Services.prefs.getIntPref("nebula-active-tab-glow", 0);
+          this.root.setAttribute("nebula-active-tab-glow", String(val));
+        } catch {}
+      };
+      updateGlowPref();
+      try {
+        Services.prefs.addObserver("nebula-active-tab-glow", updateGlowPref);
+      } catch {}
 
       // Compact mode detection
       this.compactObserver = Nebula.observePresence(
@@ -182,7 +187,7 @@
       );
 
       // Initial run
-      this.updateFaviconColor();
+      setTimeout(() => this.updateFaviconColor(), 100);
 
       Nebula.logger.log("✅ [Polyfill] Detection active.");
     }
@@ -219,6 +224,7 @@
       const iconUrl =
         tab.image ||
         tab.getAttribute("image") ||
+        tab.querySelector(".tab-icon-image")?.getAttribute("src") ||
         tab.querySelector(".tab-icon-image")?.src ||
         (window.gBrowser && typeof gBrowser.getIcon === "function"
           ? gBrowser.getIcon(tab)
@@ -254,32 +260,18 @@
       if (this._faviconTimeout) clearTimeout(this._faviconTimeout);
       this._faviconTimeout = setTimeout(async () => {
         try {
-          // If the tab already has the icon rendered in the DOM, we can draw it directly
-          const existingIcon = tab.querySelector(".tab-icon-image");
-          let img = null;
-
-          if (
-            existingIcon &&
-            (existingIcon.naturalWidth > 0 || existingIcon.width > 0)
-          ) {
-            img = existingIcon;
-          } else {
-            const newImg = new Image();
-            newImg.src = iconUrl;
-            await new Promise((resolve) => {
-              if (newImg.complete && newImg.naturalWidth > 0) {
-                resolve();
-                return;
-              }
-              newImg.onload = resolve;
-              newImg.onerror = resolve;
-            });
-            if (newImg.naturalWidth > 0) {
-              img = newImg;
+          const img = new Image();
+          img.src = iconUrl;
+          await new Promise((resolve) => {
+            if (img.complete && img.naturalWidth > 0) {
+              resolve();
+              return;
             }
-          }
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
 
-          if (!img) return;
+          if (!img.naturalWidth || !img.naturalHeight) return;
 
           const size = 16;
           if (!this._faviconCanvas) {
