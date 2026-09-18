@@ -76,13 +76,31 @@ browser {
     margin: 0 !important;
   }
 
+  /* Compensación simétrica nativa para que la web no se mueva al bajar la barra en NoGaps */
+  #tabbrowser-tabpanels[has-toolbar-hovered] .browserContainer {
+    --margin-top-fix: calc(-1 * var(--zen-toolbar-height-with-bookmarks, 38px)) !important;
+    margin-top: var(--margin-top-fix) !important;
+  }
+
+  :root[zen-single-toolbar="true"] #tabbrowser-tabpanels[has-toolbar-hovered] .browserContainer {
+    --margin-top-fix: calc(-1 * var(--zen-toolbar-height, 34px)) !important;
+    margin-top: var(--margin-top-fix) !important;
+  }
+
   :root[zen-single-toolbar="true"] {
     #zen-appcontent-navbar-wrapper {
       min-height: 0.1px !important;
       height: 0.1px !important;
     }
 
-    #zen-appcontent-navbar-wrapper[zen-has-hover="true"] {
+    #zen-appcontent-navbar-wrapper:is(
+      [zen-has-hover],
+      [zen-has-hover="true"],
+      [has-popup-menu],
+      [has-popup-menu="true"],
+      [zen-compact-mode-active],
+      [zen-compact-mode-active="true"]
+    ) {
       height: 34px !important;
     }
   }
@@ -94,7 +112,14 @@ browser {
         height: 0.1px !important;
       }
 
-      #zen-appcontent-navbar-wrapper[zen-has-hover="true"] {
+      #zen-appcontent-navbar-wrapper:is(
+        [zen-has-hover],
+        [zen-has-hover="true"],
+        [has-popup-menu],
+        [has-popup-menu="true"],
+        [zen-compact-mode-active],
+        [zen-compact-mode-active="true"]
+      ) {
         height: 38px !important;
       }
     }
