@@ -1157,8 +1157,8 @@
   class NebulaMenuModule {
     constructor() {
       this.root = document.documentElement;
-      this.STAGGER_DELAY = 15;
-      this.MAX_DELAY = 200;
+      this.STAGGER_DELAY = 12;
+      this.MAX_DELAY = 160;
       this.MENU_ITEM_SELECTORS = [
         "menuitem",
         "menuseparator",
@@ -1183,18 +1183,35 @@
     }
 
     init() {
-      document.addEventListener("popupshowing", this.handlePopupShowing, true);
+      // Use bubble phase (false) so that Firefox's internal onpopupshowing handlers (PageContextMenu.onShowing)
+      // have already updated item visibility, preventing stale items and double animations.
+      document.addEventListener("popupshowing", this.handlePopupShowing, false);
       document.addEventListener("popuphidden", this.handlePopupHidden, true);
-      document.addEventListener("ViewShowing", this.handlePopupShowing, true);
+      document.addEventListener("ViewShowing", this.handlePopupShowing, false);
       document.addEventListener("ViewHiding", this.handlePopupHidden, true);
 
       Nebula.logger.log("✅ [MenuModule] Animations initialized.");
     }
 
+    isItemVisible(item) {
+      if (!item || item.nodeType !== 1) return false;
+      if (item.hidden || item.getAttribute("hidden") === "true" || item.collapsed) {
+        return false;
+      }
+      try {
+        const style = window.getComputedStyle(item);
+        if (style.display === "none" || style.visibility === "hidden") {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+      return true;
+    }
+
     getMenuItems(popup) {
       if (!popup) return [];
       let items = [];
-      // Cache selector string
       const selectorString =
         this._cachedSelectorString ||
         (this._cachedSelectorString = this.MENU_ITEM_SELECTORS.join(","));
@@ -1229,51 +1246,69 @@
         }
       }
 
-      // Filter visible elements efficiently
-      return flattenedItems.filter((item) => {
-        if (!item || item.nodeType !== 1) return false;
-        const rect = item.getBoundingClientRect();
-        return (
-          rect.width > 0 &&
-          rect.height > 0 &&
-          getComputedStyle(item).display !== "none"
-        );
-      });
+      // Filter visible elements without depending on getBoundingClientRect during popupshowing
+      return flattenedItems.filter((item) => this.isItemVisible(item));
     }
 
     animateMenuItems(popup) {
       if (!popup) return;
-      const items = this.getMenuItems(popup);
-      // Batch DOM updates for animation
-      window.requestAnimationFrame(() => {
-        items.forEach((item, index) => this.animateItem(item, index));
-      });
-    }
 
-    animateItem(item, index) {
       const shouldAnimate =
         getComputedStyle(this.root)
           .getPropertyValue("--nebula-menu-animation")
           .trim() === "true";
 
-      item.classList.remove("nebula-menu-anim");
-      item.style.animationDelay = "";
-
       if (!shouldAnimate) return;
+
+      const items = this.getMenuItems(popup);
+      let animIndex = 0;
+
+      window.requestAnimationFrame(() => {
+        items.forEach((item) => {
+          // Never re-animate an item that has already animated during this popup session
+          if (item._nebulaAnimated) return;
+
+          this.animateItem(item, animIndex++);
+        });
+      });
+    }
+
+    animateItem(item, index) {
+      item._nebulaAnimated = true;
 
       const delay = Math.min(index * this.STAGGER_DELAY, this.MAX_DELAY);
       item.style.animationDelay = `${delay}ms`;
       item.classList.add("nebula-menu-anim");
+
+      // Clean up animation class once completed so CSS transform doesn't linger and interfere with hover/submenus
+      const onAnimEnd = () => {
+        item.removeEventListener("animationend", onAnimEnd);
+        item.classList.remove("nebula-menu-anim");
+        item.style.animationDelay = "";
+      };
+      item.addEventListener("animationend", onAnimEnd, { once: true });
     }
 
     cleanupMenuItems(popup) {
       if (!popup) return;
-      // Batch DOM updates for cleanup
+      popup._nebulaAnimating = false;
+
       window.requestAnimationFrame(() => {
-        popup.querySelectorAll(".nebula-menu-anim").forEach((item) => {
-          item.classList.remove("nebula-menu-anim");
-          item.style.animationDelay = "";
-        });
+        const allDescendants = popup.querySelectorAll("*");
+        for (const item of allDescendants) {
+          item._nebulaAnimated = false;
+          if (item.classList.contains("nebula-menu-anim")) {
+            item.classList.remove("nebula-menu-anim");
+            item.style.animationDelay = "";
+          }
+        }
+        for (const child of popup.children) {
+          child._nebulaAnimated = false;
+          if (child.classList.contains("nebula-menu-anim")) {
+            child.classList.remove("nebula-menu-anim");
+            child.style.animationDelay = "";
+          }
+        }
       });
     }
 
@@ -1302,26 +1337,36 @@
     }
 
     setupMutationObserver(popup) {
+      // Native synchronous menupopups (context menus) do not need MutationObservers
+      // because all items are ready at popupshowing. Observers on menupopups only cause
+      // unwanted re-animations when hover or attributes change.
+      if (popup.localName === "menupopup") return;
       if (this.observers.has(popup)) return;
 
+      let debounceTimer = null;
       const observer = new MutationObserver((mutations) => {
-        if (
-          mutations.some(
-            (m) =>
-              (m.type === "childList" && m.addedNodes.length > 0) ||
-              (m.type === "attributes" &&
-                ["hidden", "collapsed"].includes(m.attributeName)),
-          )
-        ) {
-          setTimeout(() => this.animateMenuItems(popup), 5);
+        const hasRelevantMutations = mutations.some(
+          (m) =>
+            (m.type === "childList" && m.addedNodes.length > 0) ||
+            (m.type === "attributes" &&
+              ["hidden", "collapsed"].includes(m.attributeName)),
+        );
+
+        if (hasRelevantMutations) {
+          if (debounceTimer) clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            // Only animates newly added or newly visible items that don't have _nebulaAnimated
+            this.animateMenuItems(popup);
+          }, 16);
         }
       });
 
+      // Observe only direct children (no subtree: true) to prevent child submenus from triggering parent observer
       observer.observe(popup, {
         childList: true,
-        subtree: true,
+        subtree: false,
         attributes: true,
-        attributeFilter: ["hidden", "collapsed", "disabled"],
+        attributeFilter: ["hidden", "collapsed"],
       });
 
       this.observers.set(popup, observer);
@@ -1330,6 +1375,11 @@
     handlePopupShowing(event) {
       const popup = event.target;
       if (!this.isTargetMenu(popup)) return;
+
+      // Prevent re-triggering on the same popup if it's already showing/animating
+      if (popup._nebulaAnimating) return;
+      popup._nebulaAnimating = true;
+
       this.animateMenuItems(popup);
       this.setupMutationObserver(popup);
     }
@@ -1337,6 +1387,7 @@
     handlePopupHidden(event) {
       const popup = event.target;
       if (!this.isTargetMenu(popup)) return;
+
       this.cleanupMenuItems(popup);
 
       if (this.observers.has(popup)) {
@@ -1349,13 +1400,13 @@
       document.removeEventListener(
         "popupshowing",
         this.handlePopupShowing,
-        true,
+        false,
       );
       document.removeEventListener("popuphidden", this.handlePopupHidden, true);
       document.removeEventListener(
         "ViewShowing",
         this.handlePopupShowing,
-        true,
+        false,
       );
       document.removeEventListener("ViewHiding", this.handlePopupHidden, true);
 
@@ -1365,6 +1416,7 @@
       document.querySelectorAll(".nebula-menu-anim").forEach((item) => {
         item.classList.remove("nebula-menu-anim");
         item.style.animationDelay = "";
+        item._nebulaAnimated = false;
       });
 
       Nebula.logger.log("🛑 [MenuModule] Animations disabled.");

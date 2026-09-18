@@ -163,7 +163,7 @@ browser {
 @keyframes nebula-menu-item-enter {
   0% {
     opacity: 0;
-    transform: translateY(-6px) scale(0.95);
+    transform: translateY(-4px) scale(0.98);
   }
 
   100% {
@@ -172,10 +172,25 @@ browser {
   }
 }
 
+@keyframes nebula-menu-separator-enter {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
 /* Animation class */
 .nebula-menu-anim {
-  animation: nebula-menu-item-enter 0.15s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation: nebula-menu-item-enter 0.14s cubic-bezier(0.2, 0, 0, 1) both;
   backface-visibility: hidden;
+}
+
+menuseparator.nebula-menu-anim {
+  animation: nebula-menu-separator-enter 0.12s ease-out both !important;
+  transform: none !important;
 }
 
 /* ------------------ Ctrl Tab Styling ------------------- */
