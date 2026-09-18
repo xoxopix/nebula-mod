@@ -229,18 +229,15 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
 /* ------------------- Active Tab Glow (Zen color or Dynamic Favicon) ------------------- */
 
 .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
-  overflow: visible !important;
-  contain: none !important;
-
-  .tab-stack {
-    overflow: visible !important;
-    contain: none !important;
-  }
-
   .tab-background {
-    overflow: visible !important;
-    contain: none !important;
     position: relative !important;
+    overflow: hidden !important;
+    border-radius: var(--nebula-border-radius) !important;
+
+    /* Single clean layer: disable overlapping pseudo-element */
+    &::after {
+      display: none !important;
+    }
   }
 }
 
@@ -252,44 +249,14 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
         ellipse at bottom center,
         color-mix(
             in srgb,
-            var(--nebula-selected-favicon-color, #ff4500) 65%,
+            var(--nebula-selected-favicon-color, #ff4500) 36%,
             transparent
           )
           0%,
-        transparent 80%
+        transparent 72%
       ),
       var(--nebula-color-selected) !important;
-    box-shadow: 0 2px 14px color-mix(
-      in srgb,
-      var(--nebula-selected-favicon-color, #ff4500) 50%,
-      transparent
-    ) !important;
-
-    &::after {
-      content: "" !important;
-      position: absolute !important;
-      inset: 0 !important;
-      border-radius: inherit !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      background: radial-gradient(
-        ellipse at bottom center,
-        color-mix(
-            in srgb,
-            var(--nebula-selected-favicon-color, #ff4500) 75%,
-            transparent
-          )
-          0%,
-        transparent 75%
-      ) !important;
-      box-shadow: 0 4px 18px color-mix(
-        in srgb,
-        var(--nebula-selected-favicon-color, #ff4500) 60%,
-        transparent
-      ) !important;
-      opacity: 1 !important;
-      transition: opacity 0.2s ease !important;
-    }
+    box-shadow: 0 0 3px var(--nebula-color-shadow) !important;
   }
 }
 
@@ -302,44 +269,14 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
       ellipse at bottom center,
       color-mix(
           in srgb,
-          var(--nebula-selected-favicon-color, #ff4500) 65%,
+          var(--nebula-selected-favicon-color, #ff4500) 36%,
           transparent
         )
         0%,
-      transparent 80%
+      transparent 72%
     ),
     var(--nebula-color-selected) !important;
-  box-shadow: 0 2px 14px color-mix(
-    in srgb,
-    var(--nebula-selected-favicon-color, #ff4500) 50%,
-    transparent
-  ) !important;
-
-  &::after {
-    content: "" !important;
-    position: absolute !important;
-    inset: 0 !important;
-    border-radius: inherit !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-    background: radial-gradient(
-      ellipse at bottom center,
-      color-mix(
-          in srgb,
-          var(--nebula-selected-favicon-color, #ff4500) 75%,
-          transparent
-        )
-        0%,
-      transparent 75%
-    ) !important;
-    box-shadow: 0 4px 18px color-mix(
-      in srgb,
-      var(--nebula-selected-favicon-color, #ff4500) 60%,
-      transparent
-    ) !important;
-    opacity: 1 !important;
-    transition: opacity 0.2s ease !important;
-  }
+  box-shadow: 0 0 3px var(--nebula-color-shadow) !important;
 }
 
 /* Glow Style: Zen Color (Mode 1) */
@@ -348,28 +285,11 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
     background:
       radial-gradient(
         ellipse at bottom center,
-        color-mix(in srgb, var(--zen-primary-color, #009688) 60%, transparent) 0%,
-        transparent 80%
+        color-mix(in srgb, var(--zen-primary-color, #009688) 36%, transparent) 0%,
+        transparent 72%
       ),
       var(--nebula-color-selected) !important;
-    box-shadow: 0 2px 14px color-mix(in srgb, var(--zen-primary-color, #009688) 45%, transparent) !important;
-
-    &::after {
-      content: "" !important;
-      position: absolute !important;
-      inset: 0 !important;
-      border-radius: inherit !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      background: radial-gradient(
-        ellipse at bottom center,
-        color-mix(in srgb, var(--zen-primary-color, #009688) 65%, transparent) 0%,
-        transparent 75%
-      ) !important;
-      box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color, #009688) 50%, transparent) !important;
-      opacity: 1 !important;
-      transition: opacity 0.2s ease !important;
-    }
+    box-shadow: 0 0 3px var(--nebula-color-shadow) !important;
   }
 }
 
@@ -377,28 +297,11 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
   background:
     radial-gradient(
       ellipse at bottom center,
-      color-mix(in srgb, var(--zen-primary-color, #009688) 60%, transparent) 0%,
-      transparent 80%
+      color-mix(in srgb, var(--zen-primary-color, #009688) 36%, transparent) 0%,
+      transparent 72%
     ),
     var(--nebula-color-selected) !important;
-  box-shadow: 0 2px 14px color-mix(in srgb, var(--zen-primary-color, #009688) 45%, transparent) !important;
-
-  &::after {
-    content: "" !important;
-    position: absolute !important;
-    inset: 0 !important;
-    border-radius: inherit !important;
-    pointer-events: none !important;
-    z-index: 1 !important;
-    background: radial-gradient(
-      ellipse at bottom center,
-      color-mix(in srgb, var(--zen-primary-color, #009688) 65%, transparent) 0%,
-      transparent 75%
-    ) !important;
-    box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color, #009688) 50%, transparent) !important;
-    opacity: 1 !important;
-    transition: opacity 0.2s ease !important;
-  }
+  box-shadow: 0 0 3px var(--nebula-color-shadow) !important;
 }
 
 /* ------------------- Multi Selected Tab Glow ------------------- */
