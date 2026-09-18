@@ -34,9 +34,15 @@
     },
 
     runOnLoad(callback) {
-      if (document.readyState === "complete") callback();
-      else
+      if (
+        document.readyState === "complete" ||
+        document.readyState === "interactive"
+      ) {
+        callback();
+      } else {
         document.addEventListener("DOMContentLoaded", callback, { once: true });
+        window.addEventListener("load", callback, { once: true });
+      }
     },
 
     register(ModuleClass) {
@@ -156,9 +162,11 @@
       // Sync active tab glow preference attribute to root
       const updateGlowPref = () => {
         try {
-          const val = Services.prefs.getIntPref("nebula-active-tab-glow", 0);
+          const val = Services.prefs.getIntPref("nebula-active-tab-glow", 2);
           this.root.setAttribute("nebula-active-tab-glow", String(val));
-        } catch {}
+        } catch {
+          this.root.setAttribute("nebula-active-tab-glow", "2");
+        }
       };
       updateGlowPref();
       try {
@@ -186,8 +194,10 @@
         this.updateFaviconColor,
       );
 
-      // Initial run
-      setTimeout(() => this.updateFaviconColor(), 100);
+      // Multiple initial passes to ensure active tab is colored immediately
+      setTimeout(() => this.updateFaviconColor(), 50);
+      setTimeout(() => this.updateFaviconColor(), 250);
+      setTimeout(() => this.updateFaviconColor(), 800);
 
       Nebula.logger.log("✅ [Polyfill] Detection active.");
     }
@@ -209,17 +219,89 @@
       );
     }
 
+    _applyFaviconColor(color, tab) {
+      if (!color) return;
+      this.root.style.setProperty("--nebula-selected-favicon-color", color);
+      this.root.setAttribute("data-nebula-favicon-active", "true");
+      this.root.setAttribute("nebula-active-tab-glow", "2");
+      if (tab) {
+        tab.style.setProperty("--nebula-selected-favicon-color", color);
+        tab.setAttribute("data-favicon-color", color);
+      }
+    }
+
+    _extractDominantFromData(data) {
+      if (!data || data.length === 0) return null;
+      const counts = [];
+      for (let i = 0; i < data.length; i += 4) {
+        const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+        if (a < 128) continue;
+        const key = `${r & 0xfc},${g & 0xfc},${b & 0xfc}`;
+        const index = counts.findIndex((c) => c.key === key);
+        if (index >= 0) counts[index].freq++;
+        else counts.push({ key, r, g, b, freq: 1 });
+      }
+
+      if (counts.length === 0) return null;
+
+      let best = null;
+      let brightCandidate = null;
+
+      for (let c of counts) {
+        const hsl = this.rgbToHsl(c.r, c.g, c.b);
+        const vibrancy = hsl.s * (1 - Math.abs(0.5 - hsl.l) * 2);
+        const brightness = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+        const score = c.freq * (vibrancy + 0.1) * (brightness + 0.1);
+
+        if (!best || score > best.score) best = { ...c, score, brightness, hsl };
+        if (brightness > 0.4 && hsl.s > 0.2) {
+          if (!brightCandidate || score > brightCandidate.score) {
+            brightCandidate = { ...c, score, brightness, hsl };
+          }
+        }
+      }
+
+      if (best && best.r + best.g + best.b < 280 && brightCandidate) {
+        best = brightCandidate;
+      }
+
+      if (best) {
+        let { r, g, b, hsl } = best;
+        const sum = r + g + b;
+        if (sum < 180) {
+          let newL = Math.max(hsl.l, 0.45);
+          newL = Math.min(newL * 1.6, 0.85);
+          let newS = Math.min(Math.max(hsl.s, 0.4) * 1.3, 1);
+          ({ r, g, b } = this.hslToRgb(hsl.h, newS, newL));
+        }
+        return `rgb(${r | 0}, ${g | 0}, ${b | 0})`;
+      }
+      return null;
+    }
+
     async updateFaviconColor(e) {
       if (
         e?.type === "TabAttrModified" &&
         e.detail?.changed &&
-        !e.detail.changed.some((attr) => ["image", "icon"].includes(attr))
+        !e.detail.changed.some((attr) => ["image", "icon", "label", "title"].includes(attr))
       ) {
         return;
       }
 
-      const tab = gBrowser?.selectedTab;
+      const tab = window.gBrowser?.selectedTab;
       if (!tab) return;
+
+      const uri = tab.linkedBrowser?.currentURI?.spec || "";
+      if (
+        uri.startsWith("about:") ||
+        uri.startsWith("chrome:") ||
+        uri.startsWith("resource:")
+      ) {
+        this.root.style.removeProperty("--nebula-selected-favicon-color");
+        tab.style.removeProperty("--nebula-selected-favicon-color");
+        tab.removeAttribute("data-favicon-color");
+        return;
+      }
 
       const iconUrl =
         tab.image ||
@@ -230,126 +312,108 @@
           ? gBrowser.getIcon(tab)
           : null);
 
-      const uri = tab.linkedBrowser?.currentURI?.spec || "";
-
-      // Internal pages: remove custom favicon color so fallback (Zen primary color) applies cleanly
-      if (
-        uri.startsWith("about:") ||
-        uri.startsWith("chrome:") ||
-        uri.startsWith("resource:") ||
-        (iconUrl &&
-          (iconUrl.startsWith("chrome://") ||
-            iconUrl.startsWith("resource://")))
-      ) {
-        this.root.style.removeProperty("--nebula-selected-favicon-color");
-        return;
-      }
-
-      if (!iconUrl) return;
-
+      const cacheKey = iconUrl || uri;
       this._faviconCache = this._faviconCache || new Map();
-      if (this._faviconCache.has(iconUrl)) {
-        this.root.style.setProperty(
-          "--nebula-selected-favicon-color",
-          this._faviconCache.get(iconUrl),
-        );
+      if (cacheKey && this._faviconCache.has(cacheKey)) {
+        this._applyFaviconColor(this._faviconCache.get(cacheKey), tab);
         return;
       }
 
-      // Debounce: delay update
+      // Fast immediate domain fallback for popular sites so tab lights up instantly
+      let fastColor = null;
+      if (uri.includes("reddit.")) fastColor = "rgb(255, 69, 0)";
+      else if (uri.includes("youtube.")) fastColor = "rgb(255, 0, 0)";
+      else if (uri.includes("spotify.")) fastColor = "rgb(30, 215, 96)";
+      else if (uri.includes("twitter.") || uri.includes("x.com")) fastColor = "rgb(29, 155, 240)";
+      else if (uri.includes("twitch.")) fastColor = "rgb(145, 71, 255)";
+      else if (uri.includes("discord.")) fastColor = "rgb(88, 101, 242)";
+      else if (uri.includes("github.")) fastColor = "rgb(180, 140, 255)";
+
+      if (fastColor) {
+        this._applyFaviconColor(fastColor, tab);
+      }
+
+      // Debounce: exact pixel color extraction
       if (this._faviconTimeout) clearTimeout(this._faviconTimeout);
       this._faviconTimeout = setTimeout(async () => {
         try {
-          const img = new Image();
-          img.src = iconUrl;
-          await new Promise((resolve) => {
-            if (img.complete && img.naturalWidth > 0) {
-              resolve();
-              return;
-            }
-            img.onload = resolve;
-            img.onerror = resolve;
-          });
+          let extractedColor = null;
 
-          if (!img.naturalWidth || !img.naturalHeight) return;
-
-          const size = 16;
-          if (!this._faviconCanvas) {
-            this._faviconCanvas = document.createElement("canvas");
-            this._faviconCanvas.width = size;
-            this._faviconCanvas.height = size;
-            this._faviconCtx = this._faviconCanvas.getContext("2d", {
-              willReadFrequently: true,
-            });
-          }
-
-          const ctx = this._faviconCtx;
-          ctx.clearRect(0, 0, size, size);
-          ctx.drawImage(img, 0, 0, size, size);
-
-          let data;
-          try {
-            data = ctx.getImageData(0, 0, size, size).data;
-          } catch (err) {
-            return;
-          }
-          const counts = [];
-
-          for (let i = 0; i < data.length; i += 4) {
-            const [r, g, b, a] = [
-              data[i],
-              data[i + 1],
-              data[i + 2],
-              data[i + 3],
-            ];
-            if (a < 128) continue;
-            const key = `${r & 0xfc},${g & 0xfc},${b & 0xfc}`;
-            const index = counts.findIndex((c) => c.key === key);
-            if (index >= 0) counts[index].freq++;
-            else counts.push({ key, r, g, b, freq: 1 });
-          }
-
-          let best = null;
-          let brightCandidate = null;
-
-          for (let c of counts) {
-            const hsl = this.rgbToHsl(c.r, c.g, c.b);
-            const vibrancy = hsl.s * (1 - Math.abs(0.5 - hsl.l) * 2);
-            const brightness = (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
-            const score = c.freq * vibrancy * brightness;
-
-            if (!best || score > best.score)
-              best = { ...c, score, brightness, hsl };
-            if (brightness > 0.5) {
-              if (!brightCandidate || score > brightCandidate.score)
-                brightCandidate = { ...c, score, brightness, hsl };
+          // Strategy 1: ctx.drawWindow from rendered .tab-icon-image
+          const iconEl = tab.querySelector(".tab-icon-image");
+          if (iconEl) {
+            const rect = iconEl.getBoundingClientRect();
+            if (rect.width > 2 && rect.height > 2) {
+              const canvas = document.createElement("canvas");
+              canvas.width = 16;
+              canvas.height = 16;
+              const ctx = canvas.getContext("2d", { willReadFrequently: true });
+              if (typeof ctx.drawWindow === "function") {
+                try {
+                  ctx.drawWindow(
+                    window,
+                    rect.left,
+                    rect.top,
+                    rect.width,
+                    rect.height,
+                    "rgba(0,0,0,0)"
+                  );
+                  const imgData = ctx.getImageData(0, 0, 16, 16).data;
+                  extractedColor = this._extractDominantFromData(imgData);
+                } catch {}
+              }
             }
           }
 
-          if (best && best.r + best.g + best.b < 300 && brightCandidate)
-            best = brightCandidate;
+          // Strategy 2: privileged fetch + createImageBitmap
+          if (!extractedColor && iconUrl) {
+            try {
+              let bitmap = null;
+              if (
+                iconUrl.startsWith("http://") ||
+                iconUrl.startsWith("https://") ||
+                iconUrl.startsWith("data:")
+              ) {
+                const res = await window.fetch(iconUrl);
+                const blob = await res.blob();
+                bitmap = await createImageBitmap(blob);
+              } else {
+                const img = new Image();
+                img.src = iconUrl;
+                await new Promise((resolve) => {
+                  if (img.complete && img.naturalWidth > 0) {
+                    resolve();
+                    return;
+                  }
+                  img.onload = resolve;
+                  img.onerror = resolve;
+                });
+                if (img.naturalWidth > 0) {
+                  bitmap = img;
+                }
+              }
 
-          if (best) {
-            let { r, g, b, hsl } = best;
-            const sum = r + g + b;
-            if (sum < 180) {
-              let newL = Math.max(hsl.l, 0.4);
-              newL = Math.min(newL * 1.6, 0.8);
-              let newS = Math.min(hsl.s * 1.2, 1);
-              ({ r, g, b } = this.hslToRgb(hsl.h, newS, newL));
-            }
+              if (bitmap) {
+                const canvas = document.createElement("canvas");
+                canvas.width = 16;
+                canvas.height = 16;
+                const ctx = canvas.getContext("2d", { willReadFrequently: true });
+                ctx.drawImage(bitmap, 0, 0, 16, 16);
+                const imgData = ctx.getImageData(0, 0, 16, 16).data;
+                extractedColor = this._extractDominantFromData(imgData);
+              }
+            } catch {}
+          }
 
-            const finalColor = `rgb(${r | 0}, ${g | 0}, ${b | 0})`;
-            this._faviconCache.set(iconUrl, finalColor);
-            this.root.style.setProperty(
-              "--nebula-selected-favicon-color",
-              finalColor,
-            );
+          const finalColor = extractedColor || fastColor;
+          if (finalColor) {
+            if (cacheKey) this._faviconCache.set(cacheKey, finalColor);
+            this._applyFaviconColor(finalColor, tab);
           }
         } catch (err) {
-          console.error("[NebulaPolyfill] Favicon color error:", err);
+          Nebula.logger.error("Favicon color error: " + err);
         }
-      }, 100);
+      }, 50);
     }
 
     // helper: convert HSL to RGB

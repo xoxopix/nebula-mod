@@ -226,106 +226,44 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
 
 /* ------------------- Active Tab Glow ------------------- */
 
-@media (-moz-pref("nebula-active-tab-glow", 1)) {
-  .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
+/* ------------------- Active Tab Glow (Zen color or Dynamic Favicon) ------------------- */
+
+.tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
+  overflow: visible !important;
+  contain: none !important;
+
+  .tab-stack {
     overflow: visible !important;
+    contain: none !important;
+  }
 
-    .tab-background {
-      overflow: visible !important;
-
-      &::after {
-        content: "" !important;
-        position: absolute !important;
-        inset: 0 !important;
-        border-radius: inherit !important;
-        pointer-events: none !important;
-        z-index: 1 !important;
-        background: radial-gradient(
-          ellipse at bottom center,
-          color-mix(in srgb, var(--zen-primary-color) 65%, transparent) 0%,
-          transparent 75%
-        ) !important;
-        box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color) 50%, transparent) !important;
-      }
-    }
-
-    &:hover .tab-background::after {
-      opacity: 0 !important;
-    }
+  .tab-background {
+    overflow: visible !important;
+    contain: none !important;
+    position: relative !important;
   }
 }
 
+/* Glow Style: Tab Icon Color (Mode 2) */
 @media (-moz-pref("nebula-active-tab-glow", 2)) {
-  .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
-    overflow: visible !important;
-
-    .tab-background {
-      overflow: visible !important;
-
-      &::after {
-        content: "" !important;
-        position: absolute !important;
-        inset: 0 !important;
-        border-radius: inherit !important;
-        pointer-events: none !important;
-        z-index: 1 !important;
-        background: radial-gradient(
-          ellipse at bottom center,
-          color-mix(
-              in srgb,
-              var(--nebula-selected-favicon-color, var(--zen-primary-color)) 70%,
-              transparent
-            )
-            0%,
-          transparent 75%
-        ) !important;
-        box-shadow: 0 4px 18px color-mix(
-          in srgb,
-          var(--nebula-selected-favicon-color, var(--zen-primary-color)) 60%,
-          transparent
-        ) !important;
-      }
-    }
-
-    &:hover .tab-background::after {
-      opacity: 0 !important;
-    }
-  }
-}
-
-:root[nebula-active-tab-glow="1"] .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
-  overflow: visible !important;
-
-  .tab-background {
-    overflow: visible !important;
-
-    &::after {
-      content: "" !important;
-      position: absolute !important;
-      inset: 0 !important;
-      border-radius: inherit !important;
-      pointer-events: none !important;
-      z-index: 1 !important;
-      background: radial-gradient(
+  .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background {
+    background:
+      radial-gradient(
         ellipse at bottom center,
-        color-mix(in srgb, var(--zen-primary-color) 65%, transparent) 0%,
-        transparent 75%
-      ) !important;
-      box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color) 50%, transparent) !important;
-    }
-  }
-
-  &:hover .tab-background::after {
-    opacity: 0 !important;
-  }
-}
-
-:root[nebula-active-tab-glow="2"] .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]),
-:root:has([nebula-active-tab-glow="2"]) .tabbrowser-tab:is([selected="true"], [visuallyselected="true"]):not([multiselected="true"]) {
-  overflow: visible !important;
-
-  .tab-background {
-    overflow: visible !important;
+        color-mix(
+            in srgb,
+            var(--nebula-selected-favicon-color, #ff4500) 65%,
+            transparent
+          )
+          0%,
+        transparent 80%
+      ),
+      var(--nebula-color-selected) !important;
+    box-shadow: 0 2px 14px color-mix(
+      in srgb,
+      var(--nebula-selected-favicon-color, #ff4500) 50%,
+      transparent
+    ) !important;
 
     &::after {
       content: "" !important;
@@ -338,7 +276,7 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
         ellipse at bottom center,
         color-mix(
             in srgb,
-            var(--nebula-selected-favicon-color, var(--zen-primary-color)) 70%,
+            var(--nebula-selected-favicon-color, #ff4500) 75%,
             transparent
           )
           0%,
@@ -346,14 +284,120 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
       ) !important;
       box-shadow: 0 4px 18px color-mix(
         in srgb,
-        var(--nebula-selected-favicon-color, var(--zen-primary-color)) 60%,
+        var(--nebula-selected-favicon-color, #ff4500) 60%,
         transparent
       ) !important;
+      opacity: 1 !important;
+      transition: opacity 0.2s ease !important;
     }
   }
+}
 
-  &:hover .tab-background::after {
-    opacity: 0 !important;
+/* Fallback via root attribute or tab data-favicon-color (Mode 2) */
+:root[nebula-active-tab-glow="2"] .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background,
+:root:has([nebula-active-tab-glow="2"]) .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background,
+.tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"])[data-favicon-color] .tab-background {
+  background:
+    radial-gradient(
+      ellipse at bottom center,
+      color-mix(
+          in srgb,
+          var(--nebula-selected-favicon-color, #ff4500) 65%,
+          transparent
+        )
+        0%,
+      transparent 80%
+    ),
+    var(--nebula-color-selected) !important;
+  box-shadow: 0 2px 14px color-mix(
+    in srgb,
+    var(--nebula-selected-favicon-color, #ff4500) 50%,
+    transparent
+  ) !important;
+
+  &::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    background: radial-gradient(
+      ellipse at bottom center,
+      color-mix(
+          in srgb,
+          var(--nebula-selected-favicon-color, #ff4500) 75%,
+          transparent
+        )
+        0%,
+      transparent 75%
+    ) !important;
+    box-shadow: 0 4px 18px color-mix(
+      in srgb,
+      var(--nebula-selected-favicon-color, #ff4500) 60%,
+      transparent
+    ) !important;
+    opacity: 1 !important;
+    transition: opacity 0.2s ease !important;
+  }
+}
+
+/* Glow Style: Zen Color (Mode 1) */
+@media (-moz-pref("nebula-active-tab-glow", 1)) {
+  .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background {
+    background:
+      radial-gradient(
+        ellipse at bottom center,
+        color-mix(in srgb, var(--zen-primary-color, #009688) 60%, transparent) 0%,
+        transparent 80%
+      ),
+      var(--nebula-color-selected) !important;
+    box-shadow: 0 2px 14px color-mix(in srgb, var(--zen-primary-color, #009688) 45%, transparent) !important;
+
+    &::after {
+      content: "" !important;
+      position: absolute !important;
+      inset: 0 !important;
+      border-radius: inherit !important;
+      pointer-events: none !important;
+      z-index: 1 !important;
+      background: radial-gradient(
+        ellipse at bottom center,
+        color-mix(in srgb, var(--zen-primary-color, #009688) 65%, transparent) 0%,
+        transparent 75%
+      ) !important;
+      box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color, #009688) 50%, transparent) !important;
+      opacity: 1 !important;
+      transition: opacity 0.2s ease !important;
+    }
+  }
+}
+
+:root[nebula-active-tab-glow="1"] .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background {
+  background:
+    radial-gradient(
+      ellipse at bottom center,
+      color-mix(in srgb, var(--zen-primary-color, #009688) 60%, transparent) 0%,
+      transparent 80%
+    ),
+    var(--nebula-color-selected) !important;
+  box-shadow: 0 2px 14px color-mix(in srgb, var(--zen-primary-color, #009688) 45%, transparent) !important;
+
+  &::after {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    border-radius: inherit !important;
+    pointer-events: none !important;
+    z-index: 1 !important;
+    background: radial-gradient(
+      ellipse at bottom center,
+      color-mix(in srgb, var(--zen-primary-color, #009688) 65%, transparent) 0%,
+      transparent 75%
+    ) !important;
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--zen-primary-color, #009688) 50%, transparent) !important;
+    opacity: 1 !important;
+    transition: opacity 0.2s ease !important;
   }
 }
 
