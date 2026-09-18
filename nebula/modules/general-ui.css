@@ -76,26 +76,60 @@ browser {
     margin: 0 !important;
   }
 
+  #zen-appcontent-wrapper {
+    position: relative !important;
+  }
+
   :root[zen-single-toolbar="true"] {
     #zen-appcontent-navbar-wrapper {
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      z-index: 100 !important;
       min-height: 0.1px !important;
       height: 0.1px !important;
+      overflow: clip !important;
     }
 
-    #zen-appcontent-navbar-wrapper[zen-has-hover="true"] {
+    #zen-appcontent-navbar-wrapper:is(
+      [zen-has-hover],
+      [zen-has-hover="true"],
+      [has-popup-menu],
+      [has-popup-menu="true"],
+      [zen-compact-mode-active],
+      [zen-compact-mode-active="true"],
+      :focus-within
+    ) {
       height: 34px !important;
+      overflow: visible !important;
     }
   }
 
   @media -moz-pref("zen.view.compact.hide-toolbar") {
     :root[zen-compact-mode="true"] {
       #zen-appcontent-navbar-wrapper {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        z-index: 100 !important;
         min-height: 0.1px !important;
         height: 0.1px !important;
+        overflow: clip !important;
       }
 
-      #zen-appcontent-navbar-wrapper[zen-has-hover="true"] {
+      #zen-appcontent-navbar-wrapper:is(
+        [zen-has-hover],
+        [zen-has-hover="true"],
+        [has-popup-menu],
+        [has-popup-menu="true"],
+        [zen-compact-mode-active],
+        [zen-compact-mode-active="true"],
+        :focus-within
+      ) {
         height: 38px !important;
+        overflow: visible !important;
       }
     }
   }
