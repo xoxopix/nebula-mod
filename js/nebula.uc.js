@@ -181,7 +181,10 @@
 
       // Toolbar mode detection
       this.modeObserver = new MutationObserver(() => this.updateToolbarModes());
-      this.modeObserver.observe(this.root, { attributes: true });
+      this.modeObserver.observe(this.root, {
+        attributes: true,
+        attributeFilter: ["zen-sidebar-expanded", "zen-single-toolbar"],
+      });
       this.updateToolbarModes();
 
       // Favicon color detection
@@ -297,9 +300,15 @@
         uri.startsWith("chrome:") ||
         uri.startsWith("resource:")
       ) {
-        this.root.style.removeProperty("--nebula-selected-favicon-color");
-        tab.style.removeProperty("--nebula-selected-favicon-color");
-        tab.removeAttribute("data-favicon-color");
+        if (this.root.style.getPropertyValue("--nebula-selected-favicon-color")) {
+          this.root.style.removeProperty("--nebula-selected-favicon-color");
+        }
+        if (tab.style.getPropertyValue("--nebula-selected-favicon-color")) {
+          tab.style.removeProperty("--nebula-selected-favicon-color");
+        }
+        if (tab.hasAttribute("data-favicon-color")) {
+          tab.removeAttribute("data-favicon-color");
+        }
         return;
       }
 
