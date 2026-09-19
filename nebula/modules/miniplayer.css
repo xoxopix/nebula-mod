@@ -15,7 +15,7 @@
   background-size: cover !important;
   background-position: center !important;
   background-repeat: no-repeat !important;
-  filter: blur(8px) saturate(115%) !important;
+  filter: blur(2px) saturate(115%) !important;
   opacity: 0 !important;
   transition: opacity 0.4s ease-in-out !important;
 }
@@ -93,7 +93,9 @@
 
 #zen-media-artist,
 .zen-media-artist {
-  font-size: 10px !important;
+  font-style: italic !important;
+  font-size: 11px !important;
+  opacity: 0.85 !important;
 }
 
 #zen-media-info-vbox::before,
@@ -171,15 +173,20 @@
   opacity: 1 !important;
 }
 
-/* Explicitly hide and terminate notes when paused, muted, or hovered */
+/* Explicitly hide and terminate notes when paused, muted, hovered, or in tab stack */
 #zen-media-controls-toolbar .zen-media-card:not(.playing) #zen-media-focus-button::after,
 #zen-media-controls-toolbar .zen-media-card:not(.playing) .zen-media-focus-button::after,
 #zen-media-controls-toolbar .zen-media-card[muted] #zen-media-focus-button::after,
 #zen-media-controls-toolbar .zen-media-card[muted] .zen-media-focus-button::after,
+.zen-media-card:not(.playing) #zen-media-focus-button::after,
+.zen-media-card:not(.playing) .zen-media-focus-button::after,
+.zen-media-card[muted] #zen-media-focus-button::after,
+.zen-media-card[muted] .zen-media-focus-button::after,
 #zen-media-controls-toolbar:hover #zen-media-focus-button::after,
 #zen-media-controls-toolbar:hover .zen-media-focus-button::after,
 .zen-media-card:hover #zen-media-focus-button::after,
-.zen-media-card:hover .zen-media-focus-button::after {
+.zen-media-card:hover .zen-media-focus-button::after,
+.tabbrowser-tab .tab-icon-stack::after {
   display: none !important;
   opacity: 0 !important;
   content: none !important;
@@ -259,72 +266,4 @@
       transform 0.15s ease,
       filter 0.15s ease;
   }
-}
-
-/* ------------------ Portada con desenfoque suave ------------------- */
-
-#Nebula-media-cover-art {
-  filter: blur(2px) saturate(115%) !important;
-}
-
-/* ------------------ Título y artista del reproductor ------------------- */
-
-#zen-media-title,
-.zen-media-title {
-  font-weight: 720 !important;
-}
-
-/* Artista / Canal debajo del título en cursiva */
-#zen-media-artist,
-.zen-media-artist {
-  font-style: italic !important;
-  font-size: 11px !important;
-  opacity: 0.85 !important;
-}
-
-/* ------------------ Notas musicales animadas flotantes ------------------- */
-/* Solo cuando el mini-reproductor está contraído y en reproducción */
-
-#zen-media-controls-toolbar:not(:hover) .zen-media-card.playing:not([muted]) #zen-media-focus-button::after,
-#zen-media-controls-toolbar:not(:hover) .zen-media-card.playing:not([muted]) .zen-media-focus-button::after {
-  content: "" !important;
-  position: absolute !important;
-  width: 130% !important;
-  height: 130% !important;
-  background: url("chrome://browser/content/zen-images/note-indicator.svg") no-repeat center !important;
-  background-size: contain !important;
-  top: -75% !important;
-  left: -15% !important;
-  right: -15% !important;
-  bottom: 0 !important;
-  z-index: 99999 !important;
-  pointer-events: none !important;
-  display: block !important;
-  opacity: 1 !important;
-}
-
-/* Ocultar notas cuando el video está en pausa, silenciado, expandido o en las pestañas */
-#zen-media-controls-toolbar .zen-media-card:not(.playing) #zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card:not(.playing) .zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card[muted] #zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card[muted] .zen-media-focus-button::after,
-.zen-media-card:not(.playing) #zen-media-focus-button::after,
-.zen-media-card:not(.playing) .zen-media-focus-button::after,
-.zen-media-card[muted] #zen-media-focus-button::after,
-.zen-media-card[muted] .zen-media-focus-button::after,
-#zen-media-controls-toolbar:hover #zen-media-focus-button::after,
-#zen-media-controls-toolbar:hover .zen-media-focus-button::after,
-.zen-media-card:hover #zen-media-focus-button::after,
-.zen-media-card:hover .zen-media-focus-button::after,
-.tabbrowser-tab .tab-icon-stack::after {
-  display: none !important;
-  opacity: 0 !important;
-  content: none !important;
-  background: none !important;
-}
-
-#zen-media-focus-button,
-.zen-media-focus-button,
-.zen-media-card {
-  overflow: visible !important;
 }
