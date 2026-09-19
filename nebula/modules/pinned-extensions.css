@@ -33,7 +33,7 @@
     gap: calc(var(--zen-toolbox-padding) - 3px) !important;
   }
 
-  #TabsToolbar-customization-target #Zen-tabs-wrapper {
+  #TabsToolbar-customization-target #zen-tabs-wrapper {
     max-height: 700px !important;
   }
 

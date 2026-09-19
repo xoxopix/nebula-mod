@@ -218,7 +218,8 @@ menuseparator.nebula-menu-anim {
   transform: none !important;
 }
 
-/* ------------------ Ctrl Tab Styling ------------------- */
+
+/* ------------------ Ctrl+Tab Glassmorphic (Vista previa de pestañas) ------------------- */
 
 #nebula-ctrltab-background-below {
   display: none !important;
@@ -239,11 +240,12 @@ menuseparator.nebula-menu-anim {
   --panel-background: transparent !important;
   --panel-background-color: transparent !important;
   --panel-border-color: transparent !important;
+  --panel-box-shadow: none !important;
   --panel-padding: 0px !important;
-  border: none !important;
-  box-shadow: none !important;
   background: transparent !important;
   background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   padding: 0px !important;
   margin: 0px !important;
   width: max-content !important;
@@ -259,7 +261,7 @@ menuseparator.nebula-menu-anim {
 
 #ctrlTab-previews {
   margin: 0 !important;
-  padding: 20px !important;
+  padding: 20px !important; /* Exactamente 20px simétricos en todos los 4 lados */
   background: transparent !important;
   display: flex !important;
   flex-direction: row !important;
@@ -267,7 +269,7 @@ menuseparator.nebula-menu-anim {
   justify-content: center !important;
   width: max-content !important;
   min-width: auto !important;
-  gap: 20px !important;
+  gap: 20px !important; /* Separación de 20px */
 }
 
 .ctrlTab-preview {
@@ -285,11 +287,16 @@ menuseparator.nebula-menu-anim {
 }
 
 .ctrlTab-preview-inner,
+.ctrlTab-preview:hover,
 .ctrlTab-preview-inner:hover,
-.ctrlTab-preview:focus > .ctrlTab-preview-inner {
+.ctrlTab-preview:focus,
+.ctrlTab-preview-inner:focus,
+.ctrlTab-preview:focus > .ctrlTab-preview-inner,
+.ctrlTab-preview[selected="true"] > .ctrlTab-preview-inner {
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
+  border-color: transparent !important;
   background: transparent !important;
   background-color: transparent !important;
   box-shadow: none !important;
@@ -298,19 +305,41 @@ menuseparator.nebula-menu-anim {
   width: auto !important;
 }
 
+/* Canvas de cada miniatura limpio, redondeado y sin fondo negro sólido */
 .ctrlTab-preview-inner .ctrlTab-canvas {
   margin: 0 !important;
   padding: 0 !important;
   border-radius: 10px !important;
   overflow: hidden !important;
+  border: none !important;
+  outline: none !important;
   background-color: rgba(30, 30, 35, 0.7) !important;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease !important;
+}
+
+/* Miniatura activa / hover: solo suave aumento, sin bordes feos */
+.ctrlTab-preview:focus > .ctrlTab-preview-inner .ctrlTab-canvas,
+.ctrlTab-preview[selected="true"] > .ctrlTab-preview-inner .ctrlTab-canvas,
+.ctrlTab-preview:hover > .ctrlTab-preview-inner .ctrlTab-canvas {
   border: none !important;
+  outline: none !important;
+  transform: scale(1.03) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
 }
 
 .ctrlTab-preview-inner .ctrlTab-label,
-.ctrlTab-preview-inner .ctrlTab-favicon-container {
+#ctrlTab-panel .ctrlTab-label,
+.ctrlTab-preview-inner .ctrlTab-favicon-container,
+#ctrlTab-panel .ctrlTab-favicon-container {
   display: none !important;
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ------------------ Botones de ventana estilo Mac OS ------------------- */
+
+.titlebar-buttonbox {
+  scale: 0.95 !important;
+}
+

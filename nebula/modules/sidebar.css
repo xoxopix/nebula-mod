@@ -525,28 +525,3 @@ findbar .findbar-closebutton {
 #sidebar-box #sidebar-header {
   border-bottom: none !important;
 }
-
-#sidebar-search-container {
-  background-color: rgb(0 0 0 / 0%) !important;
-}
-
-#sidebar-header {
-  background-color: rgb(0 0 0 / 0%) !important;
-}
-
-/* Transparent Sidebar Search Box & View Button */
-#sidebar-search-container > #search-box,
-#viewButton {
-  padding: 4px 8px !important;
-  appearance: none !important;
-  background-color: transparent !important;
-  border-radius: 10px !important;
-  border: none !important;
-}
-
-#sidebar-search-container > #search-box:hover,
-#viewButton:hover,
-#sidebar-search-container > #search-box:active,
-#viewButton:active {
-  background-color: rgb(255 255 255 / 10%) !important;
-}

@@ -49,142 +49,10 @@ statuspanel {
 
 /* 4. Mejor PiP (Estilos completos cargados desde nebula/modules/better-pip.css) */
 
-/* 5. Tarjeta del Reproductor Multimedia (Video Card) */
-#Nebula-media-cover-art {
-  filter: blur(2px) saturate(115%) !important;
-}
-
-#zen-media-title,
-.zen-media-title {
-  font-weight: 720 !important;
-}
-
-/* Artista / Canal debajo del título en cursiva */
-#zen-media-artist,
-.zen-media-artist {
-  font-style: italic !important;
-  font-size: 11px !important;
-  opacity: 0.85 !important;
-}
-
-/* 6. Vista previa de pestañas (Ctrl + Tab limpia, cristal esmerilado con padding 100% simétrico) */
-#nebula-ctrltab-background-below {
-  display: none !important;
-}
-
-#nebula-ctrltab-background-above {
-  backdrop-filter: blur(28px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
-  background-color: rgba(16, 16, 20, 0.45) !important;
-  border-radius: 14px !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
-}
-
-#ctrlTab-panel,
-#ctrlTab-panel .panel-arrowcontent,
-#ctrlTab-panel .panel-arrowbox {
-  --panel-background: transparent !important;
-  --panel-background-color: transparent !important;
-  --panel-border-color: transparent !important;
-  --panel-box-shadow: none !important;
-  --panel-padding: 0px !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0px !important;
-  margin: 0px !important;
-  width: max-content !important;
-  min-width: auto !important;
-}
-
-#ctrlTab-showAll-container,
-#ctrlTab-showAll {
-  display: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-#ctrlTab-previews {
-  margin: 0 !important;
-  padding: 20px !important; /* Exactamente 20px simétricos en todos los 4 lados */
-  background: transparent !important;
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: max-content !important;
-  min-width: auto !important;
-  gap: 20px !important; /* Separación de 20px */
-}
-
-.ctrlTab-preview {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-.ctrlTab-preview-inner,
-.ctrlTab-preview:hover,
-.ctrlTab-preview-inner:hover,
-.ctrlTab-preview:focus,
-.ctrlTab-preview-inner:focus,
-.ctrlTab-preview:focus > .ctrlTab-preview-inner,
-.ctrlTab-preview[selected="true"] > .ctrlTab-preview-inner {
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  border-color: transparent !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  transform: none !important;
-  outline: none !important;
-  width: auto !important;
-}
-
-/* Canvas de cada miniatura limpio, redondeado y sin fondo negro sólido */
-.ctrlTab-preview-inner .ctrlTab-canvas {
-  margin: 0 !important;
-  padding: 0 !important;
-  border-radius: 10px !important;
-  overflow: hidden !important;
-  border: none !important;
-  outline: none !important;
-  background-color: rgba(30, 30, 35, 0.7) !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s ease !important;
-}
-
-/* Miniatura activa / hover: solo suave aumento, sin bordes feos */
-.ctrlTab-preview:focus > .ctrlTab-preview-inner .ctrlTab-canvas,
-.ctrlTab-preview[selected="true"] > .ctrlTab-preview-inner .ctrlTab-canvas,
-.ctrlTab-preview:hover > .ctrlTab-preview-inner .ctrlTab-canvas {
-  border: none !important;
-  outline: none !important;
-  transform: scale(1.03) !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
-}
-
-.ctrlTab-preview-inner .ctrlTab-label,
-#ctrlTab-panel .ctrlTab-label,
-.ctrlTab-preview-inner .ctrlTab-favicon-container,
-#ctrlTab-panel .ctrlTab-favicon-container {
-  display: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
+/* 5-6. Reproductor multimedia y Ctrl+Tab → nebula/modules/miniplayer.css y general-ui.css */
 
 /* 7. Centrar URL en la barra de direcciones */
+
 #urlbar .urlbar-input,
 #urlbar-input,
 .urlbar-input-box,
@@ -199,57 +67,10 @@ statuspanel {
   transition: none !important;
 }
 
-/* 8. Notas musicales animadas flotantes (solo cuando el mini-reproductor está contraído y en reproducción) */
-#zen-media-controls-toolbar:not(:hover) .zen-media-card.playing:not([muted]) #zen-media-focus-button::after,
-#zen-media-controls-toolbar:not(:hover) .zen-media-card.playing:not([muted]) .zen-media-focus-button::after {
-  content: "" !important;
-  position: absolute !important;
-  width: 130% !important;
-  height: 130% !important;
-  background: url("chrome://browser/content/zen-images/note-indicator.svg") no-repeat center !important;
-  background-size: contain !important;
-  top: -75% !important;
-  left: -15% !important;
-  right: -15% !important;
-  bottom: 0 !important;
-  z-index: 99999 !important;
-  pointer-events: none !important;
-  display: block !important;
-  opacity: 1 !important;
-}
-
-/* Ocultar y terminar notas cuando el video está en pausa, silenciado, expandido o en las pestañas */
-#zen-media-controls-toolbar .zen-media-card:not(.playing) #zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card:not(.playing) .zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card[muted] #zen-media-focus-button::after,
-#zen-media-controls-toolbar .zen-media-card[muted] .zen-media-focus-button::after,
-.zen-media-card:not(.playing) #zen-media-focus-button::after,
-.zen-media-card:not(.playing) .zen-media-focus-button::after,
-.zen-media-card[muted] #zen-media-focus-button::after,
-.zen-media-card[muted] .zen-media-focus-button::after,
-#zen-media-controls-toolbar:hover #zen-media-focus-button::after,
-#zen-media-controls-toolbar:hover .zen-media-focus-button::after,
-.zen-media-card:hover #zen-media-focus-button::after,
-.zen-media-card:hover .zen-media-focus-button::after,
-.tabbrowser-tab .tab-icon-stack::after {
-  display: none !important;
-  opacity: 0 !important;
-  content: none !important;
-  background: none !important;
-}
-
-#zen-media-focus-button,
-.zen-media-focus-button,
-.zen-media-card {
-  overflow: visible !important;
-}
-
-/* 9. Escala de botones estilo Mac OS */
-.titlebar-buttonbox {
-  scale: 0.95 !important;
-}
+/* 8-9. Notas musicales y escala Mac OS → nebula/modules/miniplayer.css y general-ui.css */
 
 /* 10. Ocultar elementos no deseados del menú contextual */
+
 #context-openlinkinusercontext-menu,
 #context-openlinkincontainertab,
 #context-zenSplitLink,
