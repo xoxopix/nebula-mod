@@ -2042,6 +2042,121 @@
     }
   }
 
+  // ========== NebulaDirectFaviconModule ==========
+  class NebulaDirectFaviconModule {
+    constructor() {
+      this._failedChecks = new Set();
+      this._resolveTabFavicon = this._resolveTabFavicon.bind(this);
+    }
+
+    async init() {
+      while (!window.gBrowser?.tabContainer) {
+        await new Promise((r) => setTimeout(r, 50));
+      }
+
+      window.gBrowser.tabContainer.addEventListener(
+        "TabAttrModified",
+        this._resolveTabFavicon
+      );
+      window.gBrowser.tabContainer.addEventListener(
+        "TabSelect",
+        this._resolveTabFavicon
+      );
+      window.gBrowser.tabContainer.addEventListener(
+        "TabOpen",
+        this._resolveTabFavicon
+      );
+
+      // Initial check for all open tabs
+      for (const tab of window.gBrowser.tabs) {
+        this._checkTab(tab);
+      }
+
+      Nebula.logger.log("✅ [DirectFavicon] Direct site favicon resolver active.");
+    }
+
+    _resolveTabFavicon(e) {
+      const tab = e?.target;
+      if (tab && tab.tagName === "tab") {
+        this._checkTab(tab);
+      }
+    }
+
+    _checkTab(tab) {
+      if (!tab || tab.closing || tab.hidden) return;
+
+      const currentImg = tab.getAttribute("image") || tab.image || "";
+      if (currentImg && !currentImg.startsWith("data:image/svg+xml")) return;
+
+      const uri = tab.linkedBrowser?.currentURI?.spec || "";
+      if (!uri.startsWith("http://") && !uri.startsWith("https://")) return;
+
+      try {
+        const urlObj = new URL(uri);
+        const origin = urlObj.origin;
+        if (!origin || origin === "null") return;
+
+        const checkKey = `${origin}::${tab.linkedBrowser?.browserId || ""}`;
+        if (this._failedChecks.has(checkKey)) return;
+
+        const candidates = [
+          `${origin}/favicon.ico`,
+          `${origin}/favicon.png`
+        ];
+
+        const tryCandidate = (idx) => {
+          if (idx >= candidates.length) {
+            this._failedChecks.add(checkKey);
+            return;
+          }
+
+          const candidateUrl = candidates[idx];
+          const img = new Image();
+          img.onload = () => {
+            const nowImg = tab.getAttribute("image") || tab.image || "";
+            if (!nowImg || nowImg.startsWith("data:image/svg+xml")) {
+              tab.setAttribute("image", candidateUrl);
+              if (window.gBrowser && typeof gBrowser.setIcon === "function") {
+                try {
+                  gBrowser.setIcon(tab, candidateUrl);
+                } catch {}
+              }
+              if (tab.selected && window.Nebula) {
+                const poly = Nebula.getModule("NebulaPolyfillModule");
+                poly?.updateFaviconColor?.();
+              }
+            }
+          };
+          img.onerror = () => {
+            tryCandidate(idx + 1);
+          };
+          img.src = candidateUrl;
+        };
+
+        tryCandidate(0);
+      } catch {}
+    }
+
+    destroy() {
+      if (window.gBrowser?.tabContainer) {
+        window.gBrowser.tabContainer.removeEventListener(
+          "TabAttrModified",
+          this._resolveTabFavicon
+        );
+        window.gBrowser.tabContainer.removeEventListener(
+          "TabSelect",
+          this._resolveTabFavicon
+        );
+        window.gBrowser.tabContainer.removeEventListener(
+          "TabOpen",
+          this._resolveTabFavicon
+        );
+      }
+      this._failedChecks.clear();
+      Nebula.logger.log("🧹 [DirectFavicon] Destroyed.");
+    }
+  }
+
   // Register Nebula Modules
   Nebula.register(NebulaPolyfillModule);
   Nebula.register(NebulaGradientSliderModule);
@@ -2055,6 +2170,7 @@
   Nebula.register(NebulaStartupTabFixModule);
   Nebula.register(NebulaWindowRestoreModule);
   Nebula.register(NebulaPerformanceModule);
+  Nebula.register(NebulaDirectFaviconModule);
 
   // Start the core
   Nebula.init();

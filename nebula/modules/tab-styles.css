@@ -1,3 +1,8 @@
+/* ------------------- Tab Favicon Visibility Fix ------------------- */
+.tab-icon-image[src]:not([src=""]) {
+  content: unset !important;
+}
+
 /* ------------------- PDF Tab Custom Icon ------------------- */
 
 :is(tab, .tabbrowser-tab):is([label$=".pdf" i], [label*=".pdf " i]) img.tab-icon-image {
