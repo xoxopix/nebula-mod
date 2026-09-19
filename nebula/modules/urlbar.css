@@ -86,14 +86,28 @@
 }
 
 /* Remove favicon background when row is selected */
-.urlbarView-row-inner[selected] .urlbarView-favicon {
+.urlbarView-row[selected] .urlbarView-favicon {
   background: none !important;
 }
 
-/* Invert search icon for dark mode */
+/* Unify search magnifying glass color with the top search bar icon */
+.urlbarView-row:is([type^="search"], [type*="search"], [type="keyword"]) .urlbarView-favicon,
+.urlbarView-row .urlbarView-favicon[src*="search-glass"],
+.urlbarView-favicon[src*="search-glass"] {
+  -moz-context-properties: fill, fill-opacity, stroke !important;
+  fill: light-dark(rgb(90, 90, 90), rgb(134, 135, 140)) !important;
+  stroke: light-dark(rgb(90, 90, 90), rgb(134, 135, 140)) !important;
+  color: light-dark(rgb(90, 90, 90), rgb(134, 135, 140)) !important;
+  filter: light-dark(brightness(0) invert(0.35), brightness(0) invert(0.53)) !important;
+}
+
 @media (prefers-color-scheme: dark) {
-  .urlbarView-favicon[src="chrome://global/skin/icons/search-glass.svg"] {
-    filter: invert(1);
+  .urlbarView-row:is([type^="search"], [type*="search"], [type="keyword"]) .urlbarView-favicon,
+  .urlbarView-row .urlbarView-favicon[src*="search-glass"],
+  .urlbarView-favicon[src*="search-glass"] {
+    fill: rgb(134, 135, 140) !important;
+    stroke: rgb(134, 135, 140) !important;
+    filter: brightness(0) invert(0.53) !important;
   }
 }
 
