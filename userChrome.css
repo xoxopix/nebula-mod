@@ -69,6 +69,11 @@ statuspanel {
 
 /* 8-9. Notas musicales y escala Mac OS → nebula/modules/miniplayer.css y general-ui.css */
 
+/* 9. Escala de botones estilo Mac OS (funciona solo desde userChrome directo) */
+.titlebar-buttonbox {
+  scale: 0.95 !important;
+}
+
 /* 10. Ocultar elementos no deseados del menú contextual */
 
 #context-openlinkinusercontext-menu,
