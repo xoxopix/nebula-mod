@@ -1044,7 +1044,6 @@
   class NebulaMediaCoverArtModule {
     constructor() {
       this.OVERLAY_ID = "Nebula-media-cover-art";
-      this._hookInterval = null;
     }
 
     init() {
@@ -1054,17 +1053,11 @@
     _hookMediaController() {
       const self = this;
 
-      // 1. Try to hook ZenMediaCard prototype immediately and periodically until hooked
+      // 1. Try to hook ZenMediaCard prototype
       this._tryHookZenMediaCard();
-      this._hookInterval = setInterval(() => {
-        if (self._tryHookZenMediaCard()) {
-          clearInterval(self._hookInterval);
-          self._hookInterval = null;
-        }
-      }, 1000);
 
-      // 2. Observe media controls toolbar for new cards AND attribute/content changes (title/artist updates)
-      const toolbarObserver = new MutationObserver(() => {
+      // 2. Observe media controls toolbar for new cards
+      const observer = new MutationObserver(() => {
         self._tryHookZenMediaCard();
         self._updateAllCards();
       });
@@ -1072,13 +1065,7 @@
       const startObserver = () => {
         const toolbar = document.getElementById("zen-media-controls-toolbar");
         if (toolbar) {
-          toolbarObserver.observe(toolbar, {
-            childList: true,
-            subtree: true,
-            characterData: true,
-            attributes: true,
-            attributeFilter: ["style", "class", "hidden"],
-          });
+          observer.observe(toolbar, { childList: true });
           self._tryHookZenMediaCard();
           self._updateAllCards();
         } else {
@@ -1087,27 +1074,19 @@
       };
       startObserver();
 
-      // 3. Hook tab audio and selection events via gBrowser
+      // 3. Hook audio playback events via gBrowser
       if (window.gBrowser?.tabContainer) {
         window.gBrowser.tabContainer.addEventListener("TabAttrModified", (e) => {
           if (e.detail?.changed?.includes("soundplaying")) {
-            self._tryHookZenMediaCard();
-            self._updateAllCards();
             setTimeout(() => {
               self._tryHookZenMediaCard();
               self._updateAllCards();
-            }, 500);
+            }, 300);
           }
-        });
-        window.gBrowser.tabContainer.addEventListener("TabSelect", () => {
-          setTimeout(() => {
-            self._tryHookZenMediaCard();
-            self._updateAllCards();
-          }, 300);
         });
       }
 
-      // 4. Hook gZenMediaController methods
+      // 4. Hook gZenMediaController
       if (window.gZenMediaController) {
         if (typeof window.gZenMediaController.activateMediaControls === "function") {
           const origActivate = window.gZenMediaController.activateMediaControls;
@@ -1121,35 +1100,19 @@
                   if (toolbar && mediaController) {
                     const cards = toolbar.querySelectorAll(".zen-media-card");
                     const lastCard = cards[cards.length - 1];
-                    if (lastCard) {
+                    if (lastCard && !lastCard._mediaController) {
                       lastCard._mediaController = mediaController;
                       if (browser) lastCard._browser = browser;
-                      self._applyCoverToCard(lastCard, mediaController, browser);
+                      self._applyCoverToCard(lastCard, mediaController);
                     }
                   }
-                  self._updateAllCards();
-                }, 50);
+                }, 100);
               } catch (e) {
                 Nebula.logger.error("[MediaCoverArt] activateMediaControls hook error:", e);
               }
               return res;
             };
             window.gZenMediaController.activateMediaControls._nebulaHooked = true;
-          }
-        }
-
-        if (typeof window.gZenMediaController.onCardVisibilityChanged === "function") {
-          const origVisibility = window.gZenMediaController.onCardVisibilityChanged;
-          if (!origVisibility._nebulaHooked) {
-            window.gZenMediaController.onCardVisibilityChanged = function () {
-              const res = origVisibility.apply(this, arguments);
-              try {
-                self._tryHookZenMediaCard();
-                self._updateAllCards();
-              } catch (e) {}
-              return res;
-            };
-            window.gZenMediaController.onCardVisibilityChanged._nebulaHooked = true;
           }
         }
       }
@@ -1190,9 +1153,9 @@
             if (this.browser) {
               this.element._browser = this.browser;
             }
-            if (this.controller) {
-              self._applyCoverToCard(this.element, this.controller, this.browser);
-            }
+          }
+          if (this.controller) {
+            self._applyCoverToCard(this.element, this.controller);
           }
         } catch (e) {
           Nebula.logger.error("[MediaCoverArt] Patch error:", e);
@@ -1202,192 +1165,83 @@
       Nebula.logger.log("✅ [MediaCoverArt] ZenMediaCard prototype patched successfully.");
     }
 
-    _extractYouTubeThumb(urlStr) {
-      if (!urlStr) return null;
-      try {
-        const u = new URL(urlStr);
-        if (u.hostname.includes("youtube.com") || u.hostname.includes("youtu.be")) {
-          let videoId = u.searchParams.get("v");
-          if (!videoId && u.pathname.startsWith("/embed/")) {
-            videoId = u.pathname.split("/")[2];
-          } else if (!videoId && (u.hostname.includes("youtu.be") || u.pathname.startsWith("/shorts/") || u.pathname.startsWith("/live/"))) {
-            videoId = u.pathname.split("/").filter(Boolean).pop();
-          }
-          if (videoId) {
-            return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
-          }
-        }
-      } catch (e) {}
-      return null;
-    }
-
     _findControllerForCard(cardEl) {
+      if (cardEl._mediaController) return cardEl._mediaController;
+      if (cardEl._zenMediaCard?.controller) return cardEl._zenMediaCard.controller;
+
       const title = cardEl.querySelector(".zen-media-title")?.textContent?.trim();
       const artist = cardEl.querySelector(".zen-media-artist")?.textContent?.trim();
 
-      // If we have a cached controller on cardEl, verify that its metadata still matches this card's title
-      if (cardEl._mediaController) {
-        try {
-          const cachedMeta = cardEl._mediaController.getMetadata?.();
-          if (cachedMeta?.title && title && cachedMeta.title.trim() === title) {
-            return cardEl._mediaController;
-          }
-        } catch (e) {}
-      }
-
-      if (cardEl._zenMediaCard?.controller) {
-        try {
-          const cardMeta = cardEl._zenMediaCard.controller.getMetadata?.();
-          if (cardMeta?.title && title && cardMeta.title.trim() === title) {
-            cardEl._mediaController = cardEl._zenMediaCard.controller;
-            return cardEl._mediaController;
-          }
-        } catch (e) {}
-      }
-
       if (window.gBrowser?.browsers) {
-        // Also ensure metadatachange listener is attached to each controller
-        for (const b of window.gBrowser.browsers) {
-          try {
-            const ctrl = b.browsingContext?.mediaController;
-            if (ctrl && !ctrl._nebulaListening) {
-              ctrl._nebulaListening = true;
-              ctrl.addEventListener("metadatachange", () => {
-                this._updateAllCards();
-              });
-            }
-          } catch (e) {}
-        }
-
-        // 1. Try matching by exact or partial title among active controllers
+        // 1. Try matching by exact title
         if (title) {
           for (const b of window.gBrowser.browsers) {
-            try {
-              const ctrl = b.browsingContext?.mediaController;
-              if (!ctrl || (!ctrl.isActive && !ctrl.isPlaying)) continue;
-              const meta = ctrl.getMetadata?.();
-              if (meta?.title) {
-                const mt = meta.title.trim();
-                if (mt === title || title.startsWith(mt) || mt.startsWith(title)) {
-                  cardEl._mediaController = ctrl;
-                  cardEl._browser = b;
-                  return ctrl;
-                }
-              }
-            } catch (e) {}
+            const ctrl = b.browsingContext?.mediaController;
+            if (!ctrl) continue;
+            const meta = ctrl.getMetadata?.();
+            if (meta?.title && meta.title.trim() === title) {
+              cardEl._mediaController = ctrl;
+              cardEl._browser = b;
+              return ctrl;
+            }
           }
         }
 
-        // 2. Try matching by artist / channel among active controllers
+        // 2. Try matching by artist / channel
         if (artist) {
           for (const b of window.gBrowser.browsers) {
-            try {
-              const ctrl = b.browsingContext?.mediaController;
-              if (!ctrl || (!ctrl.isActive && !ctrl.isPlaying)) continue;
-              const meta = ctrl.getMetadata?.();
-              if (meta?.artist && meta.artist.trim() === artist) {
-                cardEl._mediaController = ctrl;
-                cardEl._browser = b;
-                return ctrl;
-              }
-            } catch (e) {}
+            const ctrl = b.browsingContext?.mediaController;
+            if (!ctrl) continue;
+            const meta = ctrl.getMetadata?.();
+            if (meta?.artist && meta.artist.trim() === artist) {
+              cardEl._mediaController = ctrl;
+              cardEl._browser = b;
+              return ctrl;
+            }
           }
         }
 
-        // 3. Match any active/playing controller
-        for (const b of window.gBrowser.browsers) {
-          try {
+        // 3. Fallback: only if there is exactly 1 card in the toolbar
+        const allCards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
+        if (allCards.length === 1) {
+          for (const b of window.gBrowser.browsers) {
             const ctrl = b.browsingContext?.mediaController;
             if (ctrl?.isActive || ctrl?.isPlaying) {
               cardEl._mediaController = ctrl;
               cardEl._browser = b;
               return ctrl;
             }
-          } catch (e) {}
-        }
-
-        // 4. Match soundplaying tab
-        if (window.gBrowser?.tabs) {
-          for (const tab of window.gBrowser.tabs) {
-            if (tab.hasAttribute("soundplaying") || tab.soundPlaying) {
-              const b = tab.linkedBrowser;
-              const ctrl = b?.browsingContext?.mediaController;
-              if (ctrl) {
-                cardEl._mediaController = ctrl;
-                cardEl._browser = b;
-                return ctrl;
-              }
-            }
           }
         }
       }
 
-      return cardEl._mediaController || null;
+      return null;
     }
 
     _updateAllCards() {
       const cards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
       cards.forEach((cardEl) => {
         const controller = this._findControllerForCard(cardEl);
-        this._applyCoverToCard(cardEl, controller, cardEl._browser);
+        if (controller) {
+          this._applyCoverToCard(cardEl, controller);
+        }
       });
     }
 
-    _applyCoverToCard(cardEl, controller, browser = null) {
+    _applyCoverToCard(cardEl, controller) {
       if (!cardEl) return;
 
+      const metadata = controller?.getMetadata?.();
+      const artwork = metadata?.artwork;
+
       let coverUrl = null;
-
-      // 1. Try extracting artwork from controller metadata
-      if (controller) {
-        try {
-          const metadata = controller.getMetadata?.();
-          const artwork = metadata?.artwork;
-          if (Array.isArray(artwork) && artwork.length > 0) {
-            const sorted = [...artwork].sort((a, b) => {
-              const [aw, ah] = a.sizes?.split("x").map(Number) || [0, 0];
-              const [bw, bh] = b.sizes?.split("x").map(Number) || [0, 0];
-              return bw * bh - aw * ah;
-            });
-            const src = sorted[0]?.src;
-            if (src && !src.startsWith("page-icon:")) {
-              coverUrl = src;
-            }
-          }
-        } catch (e) {}
-      }
-
-      // 2. Fallback: extract YouTube thumbnail directly from tab URL
-      if (!coverUrl) {
-        const targetBrowser = browser || cardEl._browser;
-        coverUrl = this._extractYouTubeThumb(targetBrowser?.currentURI?.spec);
-      }
-
-      // 3. Fallback: check any soundplaying YouTube tab
-      if (!coverUrl && window.gBrowser?.tabs) {
-        for (const tab of window.gBrowser.tabs) {
-          if (tab.hasAttribute("soundplaying") || tab.soundPlaying) {
-            const ytThumb = this._extractYouTubeThumb(tab.linkedBrowser?.currentURI?.spec);
-            if (ytThumb) {
-              coverUrl = ytThumb;
-              cardEl._browser = tab.linkedBrowser;
-              break;
-            }
-          }
-        }
-      }
-
-      // 4. Fallback: check currently selected tab if it's YouTube
-      if (!coverUrl && window.gBrowser?.selectedBrowser) {
-        coverUrl = this._extractYouTubeThumb(window.gBrowser.selectedBrowser.currentURI?.spec);
-      }
-
-      // 5. Resolve relative URLs if any
-      if (coverUrl && !coverUrl.startsWith("http://") && !coverUrl.startsWith("https://") && !coverUrl.startsWith("data:") && !coverUrl.startsWith("blob:")) {
-        try {
-          const base = browser?.currentURI?.spec || cardEl._browser?.currentURI?.spec || window.gBrowser?.currentURI?.spec;
-          if (base) coverUrl = new URL(coverUrl, base).href;
-        } catch {}
+      if (Array.isArray(artwork) && artwork.length > 0) {
+        const sorted = [...artwork].sort((a, b) => {
+          const [aw, ah] = a.sizes?.split("x").map(Number) || [0, 0];
+          const [bw, bh] = b.sizes?.split("x").map(Number) || [0, 0];
+          return bw * bh - aw * ah;
+        });
+        coverUrl = sorted[0]?.src || null;
       }
 
       let overlay = cardEl.querySelector(`:scope > #${this.OVERLAY_ID}`);
@@ -1398,12 +1252,11 @@
       }
 
       if (coverUrl) {
-        const bgVal = `url("${coverUrl}")`;
-        if (overlay.style.backgroundImage !== bgVal) {
-          overlay.style.backgroundImage = bgVal;
+        if (overlay.style.backgroundImage !== `url("${coverUrl}")`) {
+          overlay.style.backgroundImage = `url("${coverUrl}")`;
         }
         overlay.classList.add("visible");
-        cardEl.style.setProperty("--nebula-cover-art", bgVal);
+        cardEl.style.setProperty("--nebula-cover-art", `url("${coverUrl}")`);
       } else {
         overlay.style.backgroundImage = "none";
         overlay.classList.remove("visible");
@@ -1412,10 +1265,6 @@
     }
 
     destroy() {
-      if (this._hookInterval) {
-        clearInterval(this._hookInterval);
-        this._hookInterval = null;
-      }
       document.querySelectorAll(`#${this.OVERLAY_ID}`).forEach((el) => el.remove());
       Nebula.logger.log("🧹 [MediaCoverArt] Destroyed.");
     }
