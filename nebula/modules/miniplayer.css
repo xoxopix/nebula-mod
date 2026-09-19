@@ -21,13 +21,13 @@
 }
 
 #Nebula-media-cover-art.visible {
-  opacity: 0.35 !important;
+  opacity: 0.55 !important;
 }
 
 .zen-media-card:hover #Nebula-media-cover-art.visible,
 #zen-media-controls-toolbar:hover #Nebula-media-cover-art.visible,
 #zen-media-controls-toolbar > toolbaritem:hover > #Nebula-media-cover-art.visible {
-  opacity: 0.5 !important;
+  opacity: 0.75 !important;
 }
 
 .zen-media-card > *:not(#Nebula-media-cover-art) {

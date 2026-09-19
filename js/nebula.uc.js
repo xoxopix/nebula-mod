@@ -1117,8 +1117,18 @@
               try {
                 self._tryHookZenMediaCard();
                 setTimeout(() => {
+                  const toolbar = document.getElementById("zen-media-controls-toolbar");
+                  if (toolbar && mediaController) {
+                    const cards = toolbar.querySelectorAll(".zen-media-card");
+                    const lastCard = cards[cards.length - 1];
+                    if (lastCard) {
+                      lastCard._mediaController = mediaController;
+                      if (browser) lastCard._browser = browser;
+                      self._applyCoverToCard(lastCard, mediaController, browser);
+                    }
+                  }
                   self._updateAllCards();
-                }, 100);
+                }, 50);
               } catch (e) {
                 Nebula.logger.error("[MediaCoverArt] activateMediaControls hook error:", e);
               }
@@ -1181,7 +1191,7 @@
               this.element._browser = this.browser;
             }
             if (this.controller) {
-              self._applyCoverToCard(this.element, this.controller);
+              self._applyCoverToCard(this.element, this.controller, this.browser);
             }
           }
         } catch (e) {
@@ -1192,75 +1202,121 @@
       Nebula.logger.log("✅ [MediaCoverArt] ZenMediaCard prototype patched successfully.");
     }
 
+    _extractYouTubeThumb(urlStr) {
+      if (!urlStr) return null;
+      try {
+        const u = new URL(urlStr);
+        if (u.hostname.includes("youtube.com") || u.hostname.includes("youtu.be")) {
+          let videoId = u.searchParams.get("v");
+          if (!videoId && u.pathname.startsWith("/embed/")) {
+            videoId = u.pathname.split("/")[2];
+          } else if (!videoId && (u.hostname.includes("youtu.be") || u.pathname.startsWith("/shorts/") || u.pathname.startsWith("/live/"))) {
+            videoId = u.pathname.split("/").filter(Boolean).pop();
+          }
+          if (videoId) {
+            return `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
     _findControllerForCard(cardEl) {
       const title = cardEl.querySelector(".zen-media-title")?.textContent?.trim();
       const artist = cardEl.querySelector(".zen-media-artist")?.textContent?.trim();
 
       // If we have a cached controller on cardEl, verify that its metadata still matches this card's title
       if (cardEl._mediaController) {
-        const cachedMeta = cardEl._mediaController.getMetadata?.();
-        if (cachedMeta?.title && title && cachedMeta.title.trim() === title) {
-          return cardEl._mediaController;
-        }
+        try {
+          const cachedMeta = cardEl._mediaController.getMetadata?.();
+          if (cachedMeta?.title && title && cachedMeta.title.trim() === title) {
+            return cardEl._mediaController;
+          }
+        } catch (e) {}
       }
 
       if (cardEl._zenMediaCard?.controller) {
-        const cardMeta = cardEl._zenMediaCard.controller.getMetadata?.();
-        if (cardMeta?.title && title && cardMeta.title.trim() === title) {
-          cardEl._mediaController = cardEl._zenMediaCard.controller;
-          return cardEl._mediaController;
-        }
+        try {
+          const cardMeta = cardEl._zenMediaCard.controller.getMetadata?.();
+          if (cardMeta?.title && title && cardMeta.title.trim() === title) {
+            cardEl._mediaController = cardEl._zenMediaCard.controller;
+            return cardEl._mediaController;
+          }
+        } catch (e) {}
       }
 
       if (window.gBrowser?.browsers) {
         // Also ensure metadatachange listener is attached to each controller
         for (const b of window.gBrowser.browsers) {
-          const ctrl = b.browsingContext?.mediaController;
-          if (ctrl && !ctrl._nebulaListening) {
-            ctrl._nebulaListening = true;
-            ctrl.addEventListener("metadatachange", () => {
-              this._updateAllCards();
-            });
-          }
+          try {
+            const ctrl = b.browsingContext?.mediaController;
+            if (ctrl && !ctrl._nebulaListening) {
+              ctrl._nebulaListening = true;
+              ctrl.addEventListener("metadatachange", () => {
+                this._updateAllCards();
+              });
+            }
+          } catch (e) {}
         }
 
-        // 1. Try matching by exact title
+        // 1. Try matching by exact or partial title among active controllers
         if (title) {
           for (const b of window.gBrowser.browsers) {
-            const ctrl = b.browsingContext?.mediaController;
-            if (!ctrl) continue;
-            const meta = ctrl.getMetadata?.();
-            if (meta?.title && meta.title.trim() === title) {
-              cardEl._mediaController = ctrl;
-              cardEl._browser = b;
-              return ctrl;
-            }
+            try {
+              const ctrl = b.browsingContext?.mediaController;
+              if (!ctrl || (!ctrl.isActive && !ctrl.isPlaying)) continue;
+              const meta = ctrl.getMetadata?.();
+              if (meta?.title) {
+                const mt = meta.title.trim();
+                if (mt === title || title.startsWith(mt) || mt.startsWith(title)) {
+                  cardEl._mediaController = ctrl;
+                  cardEl._browser = b;
+                  return ctrl;
+                }
+              }
+            } catch (e) {}
           }
         }
 
-        // 2. Try matching by artist / channel
+        // 2. Try matching by artist / channel among active controllers
         if (artist) {
           for (const b of window.gBrowser.browsers) {
-            const ctrl = b.browsingContext?.mediaController;
-            if (!ctrl) continue;
-            const meta = ctrl.getMetadata?.();
-            if (meta?.artist && meta.artist.trim() === artist) {
-              cardEl._mediaController = ctrl;
-              cardEl._browser = b;
-              return ctrl;
-            }
+            try {
+              const ctrl = b.browsingContext?.mediaController;
+              if (!ctrl || (!ctrl.isActive && !ctrl.isPlaying)) continue;
+              const meta = ctrl.getMetadata?.();
+              if (meta?.artist && meta.artist.trim() === artist) {
+                cardEl._mediaController = ctrl;
+                cardEl._browser = b;
+                return ctrl;
+              }
+            } catch (e) {}
           }
         }
 
-        // 3. Fallback: only if there is exactly 1 card in the toolbar, match any active/playing controller
-        const allCards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
-        if (allCards.length === 1) {
-          for (const b of window.gBrowser.browsers) {
+        // 3. Match any active/playing controller
+        for (const b of window.gBrowser.browsers) {
+          try {
             const ctrl = b.browsingContext?.mediaController;
             if (ctrl?.isActive || ctrl?.isPlaying) {
               cardEl._mediaController = ctrl;
               cardEl._browser = b;
               return ctrl;
+            }
+          } catch (e) {}
+        }
+
+        // 4. Match soundplaying tab
+        if (window.gBrowser?.tabs) {
+          for (const tab of window.gBrowser.tabs) {
+            if (tab.hasAttribute("soundplaying") || tab.soundPlaying) {
+              const b = tab.linkedBrowser;
+              const ctrl = b?.browsingContext?.mediaController;
+              if (ctrl) {
+                cardEl._mediaController = ctrl;
+                cardEl._browser = b;
+                return ctrl;
+              }
             }
           }
         }
@@ -1273,32 +1329,63 @@
       const cards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
       cards.forEach((cardEl) => {
         const controller = this._findControllerForCard(cardEl);
-        if (controller) {
-          this._applyCoverToCard(cardEl, controller);
-        }
+        this._applyCoverToCard(cardEl, controller, cardEl._browser);
       });
     }
 
-    _applyCoverToCard(cardEl, controller) {
+    _applyCoverToCard(cardEl, controller, browser = null) {
       if (!cardEl) return;
 
-      const metadata = controller?.getMetadata?.();
-      const artwork = metadata?.artwork;
-
       let coverUrl = null;
-      if (Array.isArray(artwork) && artwork.length > 0) {
-        const sorted = [...artwork].sort((a, b) => {
-          const [aw, ah] = a.sizes?.split("x").map(Number) || [0, 0];
-          const [bw, bh] = b.sizes?.split("x").map(Number) || [0, 0];
-          return bw * bh - aw * ah;
-        });
-        coverUrl = sorted[0]?.src || null;
+
+      // 1. Try extracting artwork from controller metadata
+      if (controller) {
+        try {
+          const metadata = controller.getMetadata?.();
+          const artwork = metadata?.artwork;
+          if (Array.isArray(artwork) && artwork.length > 0) {
+            const sorted = [...artwork].sort((a, b) => {
+              const [aw, ah] = a.sizes?.split("x").map(Number) || [0, 0];
+              const [bw, bh] = b.sizes?.split("x").map(Number) || [0, 0];
+              return bw * bh - aw * ah;
+            });
+            const src = sorted[0]?.src;
+            if (src && !src.startsWith("page-icon:")) {
+              coverUrl = src;
+            }
+          }
+        } catch (e) {}
       }
 
-      // Resolve relative URLs if any
+      // 2. Fallback: extract YouTube thumbnail directly from tab URL
+      if (!coverUrl) {
+        const targetBrowser = browser || cardEl._browser;
+        coverUrl = this._extractYouTubeThumb(targetBrowser?.currentURI?.spec);
+      }
+
+      // 3. Fallback: check any soundplaying YouTube tab
+      if (!coverUrl && window.gBrowser?.tabs) {
+        for (const tab of window.gBrowser.tabs) {
+          if (tab.hasAttribute("soundplaying") || tab.soundPlaying) {
+            const ytThumb = this._extractYouTubeThumb(tab.linkedBrowser?.currentURI?.spec);
+            if (ytThumb) {
+              coverUrl = ytThumb;
+              cardEl._browser = tab.linkedBrowser;
+              break;
+            }
+          }
+        }
+      }
+
+      // 4. Fallback: check currently selected tab if it's YouTube
+      if (!coverUrl && window.gBrowser?.selectedBrowser) {
+        coverUrl = this._extractYouTubeThumb(window.gBrowser.selectedBrowser.currentURI?.spec);
+      }
+
+      // 5. Resolve relative URLs if any
       if (coverUrl && !coverUrl.startsWith("http://") && !coverUrl.startsWith("https://") && !coverUrl.startsWith("data:") && !coverUrl.startsWith("blob:")) {
         try {
-          const base = cardEl._browser?.currentURI?.spec || window.gBrowser?.currentURI?.spec;
+          const base = browser?.currentURI?.spec || cardEl._browser?.currentURI?.spec || window.gBrowser?.currentURI?.spec;
           if (base) coverUrl = new URL(coverUrl, base).href;
         } catch {}
       }
