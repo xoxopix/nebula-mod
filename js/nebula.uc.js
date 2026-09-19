@@ -2045,7 +2045,7 @@
   // ========== NebulaDirectFaviconModule ==========
   class NebulaDirectFaviconModule {
     constructor() {
-      this._failedChecks = new Set();
+      this._inProgress = new Set();
       this._resolveTabFavicon = this._resolveTabFavicon.bind(this);
     }
 
@@ -2062,12 +2062,8 @@
         "TabSelect",
         this._resolveTabFavicon
       );
-      window.gBrowser.tabContainer.addEventListener(
-        "TabOpen",
-        this._resolveTabFavicon
-      );
 
-      // Initial check for all open tabs
+      // Check existing tabs that have already finished loading
       for (const tab of window.gBrowser.tabs) {
         this._checkTab(tab);
       }
@@ -2077,13 +2073,23 @@
 
     _resolveTabFavicon(e) {
       const tab = e?.target;
-      if (tab && tab.tagName === "tab") {
-        this._checkTab(tab);
+      if (!tab || tab.tagName !== "tab") return;
+
+      // Only act when busy is removed (page finished loading) or on TabSelect/image change
+      if (e.type === "TabAttrModified") {
+        const changed = e.detail?.changed || [];
+        if (!changed.includes("busy") && !changed.includes("image")) return;
       }
+
+      // If tab is still loading, wait until it finishes so cookies and clearance are ready
+      if (tab.hasAttribute("busy")) return;
+
+      this._checkTab(tab);
     }
 
-    _checkTab(tab) {
+    async _checkTab(tab) {
       if (!tab || tab.closing || tab.hidden) return;
+      if (tab.hasAttribute("busy")) return;
 
       const currentImg = tab.getAttribute("image") || tab.image || "";
       if (currentImg && !currentImg.startsWith("data:image/svg+xml")) return;
@@ -2091,50 +2097,87 @@
       const uri = tab.linkedBrowser?.currentURI?.spec || "";
       if (!uri.startsWith("http://") && !uri.startsWith("https://")) return;
 
+      let origin = "";
       try {
         const urlObj = new URL(uri);
-        const origin = urlObj.origin;
+        origin = urlObj.origin;
         if (!origin || origin === "null") return;
+      } catch {
+        return;
+      }
 
-        const checkKey = `${origin}::${tab.linkedBrowser?.browserId || ""}`;
-        if (this._failedChecks.has(checkKey)) return;
+      const checkKey = `${origin}::${tab.linkedBrowser?.browserId || ""}`;
+      if (this._inProgress.has(checkKey)) return;
+      this._inProgress.add(checkKey);
 
+      try {
         const candidates = [
           `${origin}/favicon.ico`,
-          `${origin}/favicon.png`
+          `${origin}/favicon.png`,
         ];
 
-        const tryCandidate = (idx) => {
-          if (idx >= candidates.length) {
-            this._failedChecks.add(checkKey);
-            return;
-          }
+        let foundDataUrl = null;
 
-          const candidateUrl = candidates[idx];
-          const img = new Image();
-          img.onload = () => {
-            const nowImg = tab.getAttribute("image") || tab.image || "";
-            if (!nowImg || nowImg.startsWith("data:image/svg+xml")) {
-              tab.setAttribute("image", candidateUrl);
-              if (window.gBrowser && typeof gBrowser.setIcon === "function") {
-                try {
-                  gBrowser.setIcon(tab, candidateUrl);
-                } catch {}
-              }
-              if (tab.selected && window.Nebula) {
-                const poly = Nebula.getModule("NebulaPolyfillModule");
-                poly?.updateFaviconColor?.();
+        for (const candUrl of candidates) {
+          try {
+            const res = await window.fetch(candUrl, { credentials: "include" });
+            if (res.ok) {
+              const ctype = res.headers.get("content-type") || "";
+              // Validate that it's a real image, not an HTML error or challenge page
+              if (
+                ctype.includes("image") ||
+                ctype.includes("octet-stream") ||
+                ctype.includes("icon")
+              ) {
+                const blob = await res.blob();
+                if (blob && blob.size > 20) {
+                  foundDataUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = () => resolve(null);
+                    reader.readAsDataURL(blob);
+                  });
+                  if (foundDataUrl) break;
+                }
               }
             }
-          };
-          img.onerror = () => {
-            tryCandidate(idx + 1);
-          };
-          img.src = candidateUrl;
-        };
+          } catch {}
+        }
 
-        tryCandidate(0);
-      } catch {}
+        // Fallback: If fetch had CORS issues but image loads via chrome Image
+        if (!foundDataUrl) {
+          for (const candUrl of candidates) {
+            const loaded = await new Promise((resolve) => {
+              const img = new Image();
+              img.onload = () => resolve(candUrl);
+              img.onerror = () => resolve(null);
+              img.src = candUrl;
+            });
+            if (loaded) {
+              foundDataUrl = loaded;
+              break;
+            }
+          }
+        }
+
+        if (foundDataUrl) {
+          const nowImg = tab.getAttribute("image") || tab.image || "";
+          if (!nowImg || nowImg.startsWith("data:image/svg+xml")) {
+            tab.setAttribute("image", foundDataUrl);
+            if (window.gBrowser && typeof gBrowser.setIcon === "function") {
+              try {
+                gBrowser.setIcon(tab, foundDataUrl);
+              } catch {}
+            }
+            if (tab.selected && window.Nebula) {
+              const poly = Nebula.getModule("NebulaPolyfillModule");
+              poly?.updateFaviconColor?.();
+            }
+          }
+        }
+      } finally {
+        this._inProgress.delete(checkKey);
+      }
     }
 
     destroy() {
@@ -2147,12 +2190,8 @@
           "TabSelect",
           this._resolveTabFavicon
         );
-        window.gBrowser.tabContainer.removeEventListener(
-          "TabOpen",
-          this._resolveTabFavicon
-        );
       }
-      this._failedChecks.clear();
+      this._inProgress.clear();
       Nebula.logger.log("🧹 [DirectFavicon] Destroyed.");
     }
   }
