@@ -173,17 +173,15 @@
         Services.prefs.addObserver("nebula-active-tab-glow", updateGlowPref);
       } catch {}
 
-      // Compact mode detection
-      this.compactObserver = Nebula.observePresence(
-        '[zen-compact-mode="true"]',
-        "nebula-compact-mode",
-      );
-
-      // Toolbar mode detection
+      // Toolbar and compact mode detection (directly on root, avoiding full-DOM subtree observation)
       this.modeObserver = new MutationObserver(() => this.updateToolbarModes());
       this.modeObserver.observe(this.root, {
         attributes: true,
-        attributeFilter: ["zen-sidebar-expanded", "zen-single-toolbar"],
+        attributeFilter: [
+          "zen-sidebar-expanded",
+          "zen-single-toolbar",
+          "zen-compact-mode",
+        ],
       });
       this.updateToolbarModes();
 
@@ -210,7 +208,10 @@
         this.root.getAttribute("zen-sidebar-expanded") === "true";
       const isSingle =
         this.root.getAttribute("zen-single-toolbar") === "true";
+      const isCompact =
+        this.root.getAttribute("zen-compact-mode") === "true";
 
+      this.root.toggleAttribute("nebula-compact-mode", isCompact);
       this.root.toggleAttribute("nebula-single-toolbar", isSingle);
       this.root.toggleAttribute(
         "nebula-multi-toolbar",
@@ -339,10 +340,12 @@
       else if (uri.includes("github.")) fastColor = "rgb(180, 140, 255)";
 
       if (fastColor) {
+        if (cacheKey) this._faviconCache.set(cacheKey, fastColor);
         this._applyFaviconColor(fastColor, tab);
+        return;
       }
 
-      // Debounce: exact pixel color extraction
+      // Debounce: exact pixel color extraction (deferred so it never interrupts tab switch transitions)
       if (this._faviconTimeout) clearTimeout(this._faviconTimeout);
       this._faviconTimeout = setTimeout(async () => {
         try {
@@ -422,7 +425,7 @@
         } catch (err) {
           Nebula.logger.error("Favicon color error: " + err);
         }
-      }, 50);
+      }, 300);
     }
 
     // helper: convert HSL to RGB
@@ -1140,6 +1143,7 @@
       proto._nebulaCoverHooked = true;
 
       const origUpdate = proto.updateMetadata;
+      const origFocus = proto.onFocus;
       const self = this;
 
       proto.updateMetadata = function () {
@@ -1159,6 +1163,21 @@
           }
         } catch (e) {
           Nebula.logger.error("[MediaCoverArt] Patch error:", e);
+        }
+      };
+
+      proto.onFocus = function () {
+        try {
+          const tab = window.gBrowser?.getTabForBrowser(this.browser);
+          if (tab && window.gZenWorkspaces?.switchTabIfNeeded) {
+            window.gZenWorkspaces.switchTabIfNeeded(tab);
+            return;
+          }
+        } catch (e) {
+          Nebula.logger.error("[MediaCoverArt] onFocus error:", e);
+        }
+        if (typeof origFocus === "function") {
+          origFocus.apply(this, arguments);
         }
       };
 

@@ -62,12 +62,12 @@
 #zen-media-controls-toolbar > toolbaritem {
   position: relative;
   border-radius: var(--nebula-border-radius) !important;
-  backdrop-filter: saturate(1) !important;
   transition:
     border-radius 0.3s ease,
     box-shadow 0.3s ease-in-out,
     background-color 0.3s ease-in-out,
     transform 0.35s var(--zen-media-stack-easing, cubic-bezier(0.25, 1, 0.5, 1)),
+    translate 0.3s var(--zen-media-stack-easing, cubic-bezier(0.25, 1, 0.5, 1)),
     opacity 0.3s var(--zen-media-stack-easing, cubic-bezier(0.25, 1, 0.5, 1)),
     filter 0.3s var(--zen-media-stack-easing, cubic-bezier(0.25, 1, 0.5, 1)),
     padding 0.3s ease-out !important;
@@ -80,6 +80,11 @@
       rgb(10 10 10 / 100%)
     ) !important;
     box-shadow: 0 0 15px var(--nebula-color-shadow);
+  }
+
+  &[zen-hiding],
+  &[zen-removing] {
+    pointer-events: none !important;
   }
 }
 
