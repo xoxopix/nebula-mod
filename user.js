@@ -19,8 +19,6 @@ user_pref("network.ssl_tokens_cache_capacity", 2048);
 user_pref("network.http.http3.enable", true);
 /* IPv6 desactivado (mejora estabilidad en redes locales) */
 user_pref("network.dns.disableIPv6", true);
-/* ====== Efecto blur en PiP y UI ====== */
-user_pref("layout.css.backdrop-filter.enabled", true);
 
 /* ====== Rendimiento de Memoria y Caché Saludable ====== */
 user_pref("browser.cache.memory.enable", true);
