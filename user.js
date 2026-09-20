@@ -6,21 +6,21 @@ user_pref("widget.windows.mica.toplevel-backdrop", 2);
 user_pref("zen.theme.acrylic-elements", true);
 
 
-/* ====== Optimizaciones de Red Anti-Bloqueos (Solución a Pestañas que no terminan de cargar) ====== */
+
+/* ====== Optimizaciones de Red (Balanceadas: velocidad + estabilidad) ====== */
+/* Solución pestañas trabadas */
 user_pref("network.http.rcwn.enabled", false);
-user_pref("network.http.response.timeout", 20);
-user_pref("network.http.connection-timeout", 10);
+/* Conexiones */
 user_pref("network.http.max-connections", 300);
 user_pref("network.http.max-persistent-connections-per-server", 6);
 user_pref("network.http.max-urgent-start-connections", 4);
-user_pref("network.http.speculative-parallel-limit", 0);
-user_pref("network.http.http3.enable", false);
-user_pref("network.dns.disableIPv6", true);
-user_pref("network.dns.disablePrefetch", true);
-user_pref("network.dns.disablePrefetchFromHTTPS", true);
-user_pref("network.predictor.enabled", false);
-user_pref("network.predictor.enable-prefetch", false);
 user_pref("network.ssl_tokens_cache_capacity", 2048);
+/* HTTP/3 activo — más rápido en YouTube, Google, etc. */
+user_pref("network.http.http3.enable", true);
+/* IPv6 desactivado (mejora estabilidad en redes locales) */
+user_pref("network.dns.disableIPv6", true);
+/* ====== Efecto blur en PiP y UI ====== */
+user_pref("layout.css.backdrop-filter.enabled", true);
 
 /* ====== Rendimiento de Memoria y Caché Saludable ====== */
 user_pref("browser.cache.memory.enable", true);
