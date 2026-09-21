@@ -1047,26 +1047,81 @@
   class NebulaMediaCoverArtModule {
     constructor() {
       this.OVERLAY_ID = "Nebula-media-cover-art";
+      this._prototypeHooked = false;
     }
 
     init() {
       this._hookMediaController();
     }
 
+    _getToolbar() {
+      return (
+        window.gZenMediaController?.mediaControlBar ||
+        document.getElementById("zen-media-controls-toolbar")
+      );
+    }
+
     _hookMediaController() {
       const self = this;
 
-      // 1. Try to hook ZenMediaCard prototype
-      this._tryHookZenMediaCard();
+      // 1. Hook gZenMediaController.activateMediaControls synchronously without race conditions
+      if (
+        window.gZenMediaController &&
+        typeof window.gZenMediaController.activateMediaControls === "function"
+      ) {
+        const origActivate = window.gZenMediaController.activateMediaControls;
+        if (!origActivate._nebulaHooked) {
+          window.gZenMediaController.activateMediaControls = function (
+            mediaController,
+            browser
+          ) {
+            const bar = self._getToolbar();
+            const prevCards = new Set(
+              bar ? bar.querySelectorAll(".zen-media-card") : []
+            );
 
-      // 2. Observe media controls toolbar for new cards
+            const res = origActivate.apply(this, arguments);
+
+            try {
+              self._tryHookZenMediaCard();
+
+              if (bar && mediaController) {
+                // Find the exact new card element created synchronously for this activation
+                let newCard = null;
+                for (const el of bar.querySelectorAll(".zen-media-card")) {
+                  if (!prevCards.has(el)) {
+                    newCard = el;
+                    break;
+                  }
+                }
+
+                // If not newly appended, find the card corresponding to this browser
+                if (!newCard && browser) {
+                  newCard = self._findCardForBrowser(browser);
+                }
+
+                if (newCard) {
+                  self._bindCard(newCard, mediaController, browser);
+                }
+              }
+            } catch (e) {
+              Nebula.logger.error("[MediaCoverArt] activateMediaControls hook error:", e);
+            }
+
+            return res;
+          };
+          window.gZenMediaController.activateMediaControls._nebulaHooked = true;
+        }
+      }
+
+      // 2. Observe toolbar for DOM card additions / updates
       const observer = new MutationObserver(() => {
         self._tryHookZenMediaCard();
         self._updateAllCards();
       });
 
       const startObserver = () => {
-        const toolbar = document.getElementById("zen-media-controls-toolbar");
+        const toolbar = self._getToolbar();
         if (toolbar) {
           observer.observe(toolbar, { childList: true });
           self._tryHookZenMediaCard();
@@ -1077,63 +1132,39 @@
       };
       startObserver();
 
-      // 3. Hook audio playback events via gBrowser
+      // 3. Audio playback attribute listener on tabs
       if (window.gBrowser?.tabContainer) {
         window.gBrowser.tabContainer.addEventListener("TabAttrModified", (e) => {
           if (e.detail?.changed?.includes("soundplaying")) {
-            setTimeout(() => {
-              self._tryHookZenMediaCard();
-              self._updateAllCards();
-            }, 300);
+            self._tryHookZenMediaCard();
+            self._updateAllCards();
           }
         });
       }
 
-      // 4. Hook gZenMediaController
-      if (window.gZenMediaController) {
-        if (typeof window.gZenMediaController.activateMediaControls === "function") {
-          const origActivate = window.gZenMediaController.activateMediaControls;
-          if (!origActivate._nebulaHooked) {
-            window.gZenMediaController.activateMediaControls = function (mediaController, browser) {
-              const res = origActivate.apply(this, arguments);
-              try {
-                self._tryHookZenMediaCard();
-                setTimeout(() => {
-                  const toolbar = document.getElementById("zen-media-controls-toolbar");
-                  if (toolbar && mediaController) {
-                    const cards = toolbar.querySelectorAll(".zen-media-card");
-                    const lastCard = cards[cards.length - 1];
-                    if (lastCard && !lastCard._mediaController) {
-                      lastCard._mediaController = mediaController;
-                      if (browser) lastCard._browser = browser;
-                      self._applyCoverToCard(lastCard, mediaController);
-                    }
-                  }
-                }, 100);
-              } catch (e) {
-                Nebula.logger.error("[MediaCoverArt] activateMediaControls hook error:", e);
-              }
-              return res;
-            };
-            window.gZenMediaController.activateMediaControls._nebulaHooked = true;
-          }
-        }
-      }
-
+      self._tryHookZenMediaCard();
       Nebula.logger.log("✅ [MediaCoverArt] Hooked into Modern Zen Media Player.");
     }
 
     _tryHookZenMediaCard() {
+      if (this._prototypeHooked) return true;
+
+      let proto = null;
       if (typeof ZenMediaCard !== "undefined" && ZenMediaCard.prototype) {
-        this._patchZenMediaCard(ZenMediaCard.prototype);
-        return true;
-      }
-      if (window.gZenMediaController?.frontCard) {
-        const proto = Object.getPrototypeOf(window.gZenMediaController.frontCard);
-        if (proto) {
-          this._patchZenMediaCard(proto);
-          return true;
+        proto = ZenMediaCard.prototype;
+      } else if (window.gZenMediaController?.frontCard) {
+        proto = Object.getPrototypeOf(window.gZenMediaController.frontCard);
+      } else {
+        const anyCard = document.querySelector("#zen-media-controls-toolbar .zen-media-card");
+        if (anyCard?._zenMediaCard) {
+          proto = Object.getPrototypeOf(anyCard._zenMediaCard);
         }
+      }
+
+      if (proto && !proto._nebulaCoverHooked) {
+        this._patchZenMediaCard(proto);
+        this._prototypeHooked = true;
+        return true;
       }
       return false;
     }
@@ -1143,28 +1174,33 @@
       proto._nebulaCoverHooked = true;
 
       const origUpdate = proto.updateMetadata;
+      const origPosition = proto.updatePosition;
       const origFocus = proto.onFocus;
       const self = this;
 
       proto.updateMetadata = function () {
         origUpdate.apply(this, arguments);
         try {
-          if (this.element) {
+          if (this.element && this.controller) {
             this.element._zenMediaCard = this;
-            if (this.controller) {
-              this.element._mediaController = this.controller;
-            }
-            if (this.browser) {
-              this.element._browser = this.browser;
-            }
-          }
-          if (this.controller) {
-            self._applyCoverToCard(this.element, this.controller);
+            self._bindCard(this.element, this.controller, this.browser);
           }
         } catch (e) {
-          Nebula.logger.error("[MediaCoverArt] Patch error:", e);
+          Nebula.logger.error("[MediaCoverArt] updateMetadata patch error:", e);
         }
       };
+
+      if (typeof origPosition === "function") {
+        proto.updatePosition = function () {
+          origPosition.apply(this, arguments);
+          try {
+            if (this.element && this.controller) {
+              this.element._zenMediaCard = this;
+              self._applyCoverToCard(this.element, this.controller);
+            }
+          } catch (e) {}
+        };
+      }
 
       proto.onFocus = function () {
         try {
@@ -1184,19 +1220,89 @@
       Nebula.logger.log("✅ [MediaCoverArt] ZenMediaCard prototype patched successfully.");
     }
 
+    _bindCard(cardEl, mediaController, browser) {
+      if (!cardEl || !mediaController) return;
+
+      // Avoid re-binding the same controller
+      if (cardEl._mediaController === mediaController && cardEl._nebulaBound) {
+        this._applyCoverToCard(cardEl, mediaController);
+        return;
+      }
+
+      // Clean up previous controller listeners if controller changed
+      if (typeof cardEl._nebulaCleanup === "function") {
+        cardEl._nebulaCleanup();
+      }
+
+      cardEl._mediaController = mediaController;
+      if (browser) cardEl._browser = browser;
+      cardEl._nebulaBound = true;
+
+      const update = () => this._applyCoverToCard(cardEl, mediaController);
+
+      // Listen directly to controller events for instant, synchronized updates
+      const listeners = {
+        metadatachange: update,
+        playbackstatechange: update,
+        positionstatechange: update,
+      };
+
+      for (const [evt, fn] of Object.entries(listeners)) {
+        try {
+          mediaController.addEventListener(evt, fn);
+        } catch {}
+      }
+
+      cardEl._nebulaCleanup = () => {
+        for (const [evt, fn] of Object.entries(listeners)) {
+          try {
+            mediaController.removeEventListener(evt, fn);
+          } catch {}
+        }
+        cardEl._nebulaBound = false;
+      };
+
+      update();
+    }
+
+    _findCardForBrowser(browser) {
+      if (!browser) return null;
+      const bar = this._getToolbar();
+      if (!bar) return null;
+
+      const cards = bar.querySelectorAll(".zen-media-card");
+      for (const cardEl of cards) {
+        if (cardEl._browser === browser || cardEl._zenMediaCard?.browser === browser) {
+          return cardEl;
+        }
+        if (
+          cardEl._browser?.browserId === browser.browserId ||
+          cardEl._zenMediaCard?.browser?.browserId === browser.browserId
+        ) {
+          return cardEl;
+        }
+      }
+      return null;
+    }
+
     _findControllerForCard(cardEl) {
-      if (cardEl._mediaController) return cardEl._mediaController;
-      if (cardEl._zenMediaCard?.controller) return cardEl._zenMediaCard.controller;
+      if (cardEl._mediaController?.isActive) return cardEl._mediaController;
+      if (cardEl._zenMediaCard?.controller?.isActive) return cardEl._zenMediaCard.controller;
+
+      const browser = cardEl._browser || cardEl._zenMediaCard?.browser;
+      if (browser?.browsingContext?.mediaController?.isActive) {
+        return browser.browsingContext.mediaController;
+      }
 
       const title = cardEl.querySelector(".zen-media-title")?.textContent?.trim();
       const artist = cardEl.querySelector(".zen-media-artist")?.textContent?.trim();
 
       if (window.gBrowser?.browsers) {
-        // 1. Try matching by exact title
+        // 1. Match by exact title
         if (title) {
           for (const b of window.gBrowser.browsers) {
             const ctrl = b.browsingContext?.mediaController;
-            if (!ctrl) continue;
+            if (!ctrl?.isActive) continue;
             const meta = ctrl.getMetadata?.();
             if (meta?.title && meta.title.trim() === title) {
               cardEl._mediaController = ctrl;
@@ -1206,11 +1312,11 @@
           }
         }
 
-        // 2. Try matching by artist / channel
+        // 2. Match by artist
         if (artist) {
           for (const b of window.gBrowser.browsers) {
             const ctrl = b.browsingContext?.mediaController;
-            if (!ctrl) continue;
+            if (!ctrl?.isActive) continue;
             const meta = ctrl.getMetadata?.();
             if (meta?.artist && meta.artist.trim() === artist) {
               cardEl._mediaController = ctrl;
@@ -1220,12 +1326,12 @@
           }
         }
 
-        // 3. Fallback: only if there is exactly 1 card in the toolbar
+        // 3. Fallback: single active card
         const allCards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
         if (allCards.length === 1) {
           for (const b of window.gBrowser.browsers) {
             const ctrl = b.browsingContext?.mediaController;
-            if (ctrl?.isActive || ctrl?.isPlaying) {
+            if (ctrl?.isActive && (ctrl.isPlaying || b.hasAttribute?.("soundplaying"))) {
               cardEl._mediaController = ctrl;
               cardEl._browser = b;
               return ctrl;
@@ -1238,11 +1344,14 @@
     }
 
     _updateAllCards() {
-      const cards = document.querySelectorAll("#zen-media-controls-toolbar .zen-media-card");
+      const bar = this._getToolbar();
+      if (!bar) return;
+
+      const cards = bar.querySelectorAll(".zen-media-card");
       cards.forEach((cardEl) => {
         const controller = this._findControllerForCard(cardEl);
         if (controller) {
-          this._applyCoverToCard(cardEl, controller);
+          this._bindCard(cardEl, controller, cardEl._browser);
         }
       });
     }
@@ -1263,6 +1372,24 @@
         coverUrl = sorted[0]?.src || null;
       }
 
+      // Fast fallback for YouTube videos before MediaSession artwork arrives
+      if (!coverUrl) {
+        const browser = cardEl._browser || cardEl._zenMediaCard?.browser;
+        const currentUrl = browser?.currentURI?.spec || "";
+        if (currentUrl.includes("youtube.com/watch") || currentUrl.includes("youtu.be/")) {
+          try {
+            const urlObj = new URL(currentUrl);
+            let videoId = urlObj.searchParams.get("v");
+            if (!videoId && currentUrl.includes("youtu.be/")) {
+              videoId = urlObj.pathname.slice(1).split("/")[0];
+            }
+            if (videoId) {
+              coverUrl = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+            }
+          } catch {}
+        }
+      }
+
       let overlay = cardEl.querySelector(`:scope > #${this.OVERLAY_ID}`);
       if (!overlay) {
         overlay = document.createElement("div");
@@ -1271,12 +1398,14 @@
       }
 
       if (coverUrl) {
+        cardEl._currentCoverUrl = coverUrl;
         if (overlay.style.backgroundImage !== `url("${coverUrl}")`) {
           overlay.style.backgroundImage = `url("${coverUrl}")`;
         }
         overlay.classList.add("visible");
         cardEl.style.setProperty("--nebula-cover-art", `url("${coverUrl}")`);
-      } else {
+      } else if (!cardEl._currentCoverUrl || !controller?.isActive) {
+        cardEl._currentCoverUrl = null;
         overlay.style.backgroundImage = "none";
         overlay.classList.remove("visible");
         cardEl.style.removeProperty("--nebula-cover-art");
@@ -1284,6 +1413,14 @@
     }
 
     destroy() {
+      const bar = this._getToolbar();
+      if (bar) {
+        bar.querySelectorAll(".zen-media-card").forEach((cardEl) => {
+          if (typeof cardEl._nebulaCleanup === "function") {
+            cardEl._nebulaCleanup();
+          }
+        });
+      }
       document.querySelectorAll(`#${this.OVERLAY_ID}`).forEach((el) => el.remove());
       Nebula.logger.log("🧹 [MediaCoverArt] Destroyed.");
     }
