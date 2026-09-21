@@ -193,14 +193,4 @@
       animation-play-state: paused;
     }
   }
-
-  @keyframes tab-hover-gradient {
-    from {
-      background-position: 0% 50%;
-    }
-
-    to {
-      background-position: 200% 50%;
-    }
-  }
 }

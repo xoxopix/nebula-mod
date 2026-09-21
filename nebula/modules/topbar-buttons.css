@@ -267,12 +267,16 @@ html[zen-single-toolbar="true"] {
 
 /* ------------------------- MacOS Style buttons ------------------------- */
 
+:is(:root, #main-window, html) .titlebar-buttonbox {
+  scale: 0.95 !important;
+}
+
 /* Base for 2 options */
 @media (-moz-pref("nebula-macos-style-buttons")) {
   /* Container for window control buttons */
   .titlebar-buttonbox {
     margin: -2px -2px 0 -4px !important; /* top right bottom left */
-    scale: 0.85 !important;
+    scale: 0.95 !important;
     transform: translate(0, 0) !important;
     gap: 5px !important;
   }

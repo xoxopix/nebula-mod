@@ -15,12 +15,16 @@
 }
 
 /* Vertical tabs on right side */
+:root[zen-right-side="true"] #customization-container,
 @media (-moz-pref("zen.tabs.vertical.right-side")) {
   #customization-container {
     left: 10px;
     right: auto;
   }
+}
 
+:root[zen-right-side="true"] #customization-content-container,
+@media (-moz-pref("zen.tabs.vertical.right-side")) {
   #customization-content-container {
     flex-direction: row-reverse;
   }

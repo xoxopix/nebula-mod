@@ -5,8 +5,6 @@ user_pref("widget.windows.mica", true);
 user_pref("widget.windows.mica.toplevel-backdrop", 2);
 user_pref("zen.theme.acrylic-elements", true);
 
-
-
 /* ====== Optimizaciones de Red (Balanceadas: velocidad + estabilidad) ====== */
 /* Solución pestañas trabadas */
 user_pref("network.http.rcwn.enabled", false);
@@ -61,5 +59,3 @@ user_pref("pdfjs.enabledCache.state", true);
 user_pref("pdfjs.enableOptimizedPartialRendering", false);
 user_pref("pdfjs.capCanvasAreaFactor", -1);
 user_pref("pdfjs.disableAutoFetch", false);
-
-

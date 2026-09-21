@@ -106,7 +106,7 @@
     }
   }
 
-  #zen-essentials-container {
+  :is(.zen-essentials-container, #zen-essentials-container, #zen-essentials) {
     .tab-icon-overlay:is([soundplaying], [muted], [activemedia-blocked]) {
       margin: 0 !important;
     }

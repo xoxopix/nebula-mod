@@ -162,10 +162,10 @@
       // Sync active tab glow preference attribute to root
       const updateGlowPref = () => {
         try {
-          const val = Services.prefs.getIntPref("nebula-active-tab-glow", 2);
+          const val = Services.prefs.getIntPref("nebula-active-tab-glow", 0);
           this.root.setAttribute("nebula-active-tab-glow", String(val));
         } catch {
-          this.root.setAttribute("nebula-active-tab-glow", "2");
+          this.root.setAttribute("nebula-active-tab-glow", "0");
         }
       };
       updateGlowPref();
@@ -227,7 +227,6 @@
       if (!color) return;
       this.root.style.setProperty("--nebula-selected-favicon-color", color);
       this.root.setAttribute("data-nebula-favicon-active", "true");
-      this.root.setAttribute("nebula-active-tab-glow", "2");
       if (tab) {
         tab.style.setProperty("--nebula-selected-favicon-color", color);
         tab.setAttribute("data-favicon-color", color);
@@ -621,425 +620,6 @@
 
       this.root.style.removeProperty("--nebula-gradient-opacity");
       Nebula.logger.log("🧹 [GradientSlider] Destroyed");
-    }
-  }
-
-  // ========== NebulaTitlebarBackgroundModule ==========
-  class NebulaTitlebarBackgroundModule {
-    constructor() {
-      this.root = document.documentElement;
-      this.browser = document.getElementById("browser");
-      this.titlebar = document.getElementById("titlebar");
-      this.overlay = null;
-      this.lastRect = {};
-      this.lastVisible = false;
-      this.animationFrameId = null;
-
-      this.update = this.update.bind(this);
-      this._compactCallback = this._compactCallback.bind(this);
-      this.resizeObserver = null;
-      this.intersectionObserver = null;
-    }
-
-    init() {
-      if (!this.browser || !this.titlebar) {
-        Nebula.logger.warn(
-          "⚠️ [TitlebarBackground] Required elements not found.",
-        );
-        return;
-      }
-
-      this.overlay = document.createElement("div");
-      this.overlay.id = "Nebula-titlebar-background";
-      Object.assign(this.overlay.style, {
-        position: "absolute",
-        display: "none",
-      });
-      this.browser.appendChild(this.overlay);
-
-      gZenCompactModeManager.addEventListener(this._compactCallback);
-
-      if (this.root.hasAttribute("nebula-compact-mode")) {
-        this.startLiveTracking();
-      }
-
-      Nebula.logger.log("✅ [TitlebarBackground] Tracking initialized.");
-    }
-
-    _compactCallback() {
-      const isCompact = this.root.hasAttribute("nebula-compact-mode");
-      if (isCompact) {
-        this.startLiveTracking();
-      } else {
-        this.stopLiveTracking();
-        this.hideOverlay();
-      }
-    }
-
-    update() {
-      const isCompact = this.root.hasAttribute("nebula-compact-mode");
-
-      if (!isCompact) {
-        this.stopLiveTracking();
-        this.hideOverlay();
-        return;
-      }
-
-      const rect = this.titlebar.getBoundingClientRect();
-      const style = getComputedStyle(this.titlebar);
-
-      const isVisible =
-        rect.width > 5 &&
-        rect.height > 5 &&
-        style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        style.opacity !== "0" &&
-        rect.bottom > 0 &&
-        rect.top < window.innerHeight;
-
-      this.lastRect = {
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      };
-
-      if (isVisible) {
-        Object.assign(this.overlay.style, {
-          top: `${rect.top + window.scrollY}px`,
-          left: `${rect.left + window.scrollX}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          display: "block",
-        });
-
-        if (!this.lastVisible) {
-          this.overlay.classList.add("visible");
-          this.lastVisible = true;
-        }
-      } else {
-        this.hideOverlay();
-      }
-    }
-
-    hideOverlay() {
-      if (this.lastVisible) {
-        this.overlay.classList.remove("visible");
-        this.overlay.style.display = "none";
-        this.lastVisible = false;
-      }
-    }
-
-    startLiveTracking() {
-      this.stopLiveTracking();
-      this.update();
-      if (!this.resizeObserver && window.ResizeObserver) {
-        this.resizeObserver = new ResizeObserver(() => this.update());
-        this.resizeObserver.observe(this.titlebar);
-      }
-      window.addEventListener("resize", this.update, { passive: true });
-    }
-
-    stopLiveTracking() {
-      if (this.animationFrameId) {
-        cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
-      }
-      if (this.resizeObserver) {
-        this.resizeObserver.disconnect();
-        this.resizeObserver = null;
-      }
-      window.removeEventListener("resize", this.update);
-    }
-
-    destroy() {
-      gZenCompactModeManager.removeEventListener(this._compactCallback);
-      this.stopLiveTracking();
-      this.hideOverlay();
-      this.overlay?.remove();
-      this.overlay = null;
-      Nebula.logger.log("🧹 [TitlebarBackground] Destroyed.");
-    }
-  }
-
-  // ========== NebulaNavbarBackgroundModule ==========
-  class NebulaNavbarBackgroundModule {
-    constructor() {
-      this.root = document.documentElement;
-      this.browser = document.getElementById("browser");
-      this.navbar = document.getElementById("nav-bar");
-      this.overlay = null;
-      this.lastRect = {};
-      this.lastVisible = false;
-      this.animationFrameId = null;
-
-      this.update = this.update.bind(this);
-      this._compactCallback = this._compactCallback.bind(this);
-    }
-
-    init() {
-      if (!this.browser || !this.navbar) {
-        Nebula.logger.warn(
-          "⚠️ [NavbarBackground] Required elements not found.",
-        );
-        return;
-      }
-
-      this.overlay = document.createElement("div");
-      this.overlay.id = "Nebula-navbar-background";
-      Object.assign(this.overlay.style, {
-        position: "absolute",
-        display: "none",
-      });
-      this.browser.appendChild(this.overlay);
-
-      gZenCompactModeManager.addEventListener(this._compactCallback);
-
-      if (this.root.hasAttribute("nebula-compact-mode")) {
-        this.startLiveTracking();
-      }
-
-      Nebula.logger.log("✅ [NavbarBackground] Tracking initialized.");
-    }
-
-    _compactCallback() {
-      const isCompact = this.root.hasAttribute("nebula-compact-mode");
-      if (isCompact) {
-        this.startLiveTracking();
-      } else {
-        this.stopLiveTracking();
-        this.hideOverlay();
-      }
-    }
-
-    update() {
-      const isCompact = this.root.hasAttribute("nebula-compact-mode");
-      if (!isCompact) {
-        this.stopLiveTracking();
-        this.hideOverlay();
-        return;
-      }
-
-      const rect = this.navbar.getBoundingClientRect();
-      const style = getComputedStyle(this.navbar);
-
-      const isVisible =
-        rect.width > 5 &&
-        rect.height > 5 &&
-        style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        style.opacity !== "0" &&
-        rect.bottom > 0 &&
-        rect.top < window.innerHeight;
-
-      const changed =
-        rect.top !== this.lastRect.top ||
-        rect.left !== this.lastRect.left ||
-        rect.width !== this.lastRect.width ||
-        rect.height !== this.lastRect.height;
-
-      if (!changed && this.lastVisible === isVisible) {
-        this.animationFrameId = requestAnimationFrame(this.update);
-        return;
-      }
-
-      this.lastRect = {
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      };
-
-      if (isVisible) {
-        Object.assign(this.overlay.style, {
-          top: `${rect.top + window.scrollY}px`,
-          left: `${rect.left + window.scrollX}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          display: "block",
-        });
-
-        if (!this.lastVisible) {
-          this.overlay.classList.add("visible");
-          this.lastVisible = true;
-        }
-      } else {
-        this.hideOverlay();
-      }
-
-      this.animationFrameId = requestAnimationFrame(this.update);
-    }
-
-    hideOverlay() {
-      if (this.lastVisible) {
-        this.overlay.classList.remove("visible");
-        this.overlay.style.display = "none";
-        this.lastVisible = false;
-      }
-    }
-
-    startLiveTracking() {
-      this.stopLiveTracking();
-      this.update();
-    }
-
-    stopLiveTracking() {
-      if (this.animationFrameId) {
-        cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
-      }
-    }
-
-    destroy() {
-      gZenCompactModeManager.removeEventListener(this._compactCallback);
-      this.stopLiveTracking();
-      this.hideOverlay();
-      this.overlay?.remove();
-      this.overlay = null;
-      Nebula.logger.log("🧹 [NavbarBackground] Destroyed.");
-    }
-  }
-
-  // ========== NebulaURLBarBackgroundModule ==========
-  class NebulaURLBarBackgroundModule {
-    constructor() {
-      this.root = document.documentElement;
-      this.browser = document.getElementById("browser");
-      this.urlbar = document.getElementById("urlbar");
-      this.overlay = null;
-      this.lastRect = {};
-      this.lastVisible = false;
-      this.animationFrameId = null;
-
-      this.update = this.update.bind(this);
-      this.mutationObserver = null;
-    }
-
-    init() {
-      if (!this.browser || !this.urlbar) {
-        Nebula.logger.warn(
-          "⚠️ [URLBarBackground] Required elements not found.",
-        );
-        return;
-      }
-
-      this.overlay = document.createElement("div");
-      this.overlay.id = "Nebula-urlbar-background";
-      Object.assign(this.overlay.style, {
-        position: "absolute",
-        display: "none",
-      });
-      this.browser.appendChild(this.overlay);
-
-      // Start mutation observer for `open` attribute change
-      this.mutationObserver = new MutationObserver(() => this.onMutation());
-      this.mutationObserver.observe(this.urlbar, {
-        attributes: true,
-        attributeFilter: ["open"],
-      });
-
-      if (this.urlbar.hasAttribute("open")) {
-        this.startLiveTracking();
-      }
-
-      Nebula.logger.log("✅ [URLBarBackground] Tracking initialized.");
-    }
-
-    onMutation() {
-      const isOpen = this.urlbar.hasAttribute("open");
-      if (isOpen) {
-        this.startLiveTracking();
-      } else {
-        this.stopLiveTracking();
-        this.hideOverlay();
-      }
-    }
-
-    update() {
-      const isOpen = this.urlbar.hasAttribute("open");
-      if (!isOpen) {
-        this.stopLiveTracking();
-        this.hideOverlay();
-        return;
-      }
-
-      const rect = this.urlbar.getBoundingClientRect();
-      const style = getComputedStyle(this.urlbar);
-
-      const isVisible =
-        rect.width > 5 &&
-        rect.height > 5 &&
-        style.display !== "none" &&
-        style.visibility !== "hidden" &&
-        style.opacity !== "0" &&
-        rect.bottom > 0 &&
-        rect.top < window.innerHeight;
-
-      const changed =
-        rect.top !== this.lastRect.top ||
-        rect.left !== this.lastRect.left ||
-        rect.width !== this.lastRect.width ||
-        rect.height !== this.lastRect.height;
-
-      if (!changed && this.lastVisible === isVisible) {
-        this.animationFrameId = requestAnimationFrame(this.update);
-        return;
-      }
-
-      this.lastRect = {
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      };
-
-      if (isVisible) {
-        Object.assign(this.overlay.style, {
-          top: `${rect.top + window.scrollY}px`,
-          left: `${rect.left + window.scrollX}px`,
-          width: `${rect.width}px`,
-          height: `${rect.height}px`,
-          display: "block",
-        });
-
-        if (!this.lastVisible) {
-          this.overlay.classList.add("visible");
-          this.lastVisible = true;
-        }
-      } else {
-        this.hideOverlay();
-      }
-
-      this.animationFrameId = requestAnimationFrame(this.update);
-    }
-
-    hideOverlay() {
-      if (this.lastVisible) {
-        this.overlay.classList.remove("visible");
-        this.overlay.style.display = "none";
-        this.lastVisible = false;
-      }
-    }
-
-    startLiveTracking() {
-      this.stopLiveTracking();
-      this.update();
-    }
-
-    stopLiveTracking() {
-      if (this.animationFrameId) {
-        cancelAnimationFrame(this.animationFrameId);
-        this.animationFrameId = null;
-      }
-    }
-
-    destroy() {
-      this.mutationObserver?.disconnect();
-      this.stopLiveTracking();
-      this.hideOverlay();
-      this.overlay?.remove();
-      this.overlay = null;
-      Nebula.logger.log("🧹 [URLBarBackground] Destroyed.");
     }
   }
 
@@ -2095,92 +1675,6 @@
     }
   }
 
-  // ========== NebulaPerformanceModule ==========
-  class NebulaPerformanceModule {
-    init() {
-      try {
-        if (typeof Services === "undefined" || !Services.prefs) return;
-
-        const boolPrefs = {
-          // Network anti-stall & fast loading
-          "network.http.rcwn.enabled": false,
-          "network.http.http3.enable": true,
-          "network.dns.disableIPv6": true,
-          "network.dns.disablePrefetch": false,
-          "network.dns.disablePrefetchFromHTTPS": false,
-          "network.predictor.enabled": true,
-          "network.predictor.enable-prefetch": false,
-
-          // Memory & Cache
-          "browser.cache.memory.enable": true,
-          "browser.cache.disk.smart_size.enabled": true,
-          "browser.tabs.unloadOnLowMemory": true,
-          "browser.tabs.remote.warmup.enabled": false,
-
-          // Fast startup (on-demand restore)
-          "browser.sessionstore.restore_on_demand": true,
-
-          // GPU & Multithread rendering
-          "layout.css.servo.parallel-restyle": true,
-          "gfx.webrender.all": true,
-          "gfx.webrender.dcomp-video-overlay-win": true,
-          "media.hardware-video-decoding.overlay.enabled": true,
-          "dom.ipc.processPriorityManager.enabled": true,
-
-          // Telemetry
-          "toolkit.telemetry.enabled": false,
-          "toolkit.telemetry.unified": false,
-          "browser.ping-centre.telemetry": false,
-          "datareporting.healthreport.uploadEnabled": false,
-          "datareporting.policy.dataSubmissionEnabled": false,
-
-          // PDF viewer
-          "pdfjs.enableAltText": false,
-          "pdfjs.enableAltTextForEnglish": false,
-          "pdfjs.enableScripting": false,
-          "pdfjs.enabledCache.state": true,
-          "pdfjs.enableOptimizedPartialRendering": false,
-          "pdfjs.disableAutoFetch": false,
-
-          // Style sheets
-          "toolkit.legacyUserProfileCustomizations.stylesheets": true,
-        };
-
-        const intPrefs = {
-          "network.http.response.timeout": 20,
-          "network.http.connection-timeout": 10,
-          "network.http.max-connections": 300,
-          "network.http.max-persistent-connections-per-server": 6,
-          "network.http.max-urgent-start-connections": 4,
-          "network.http.speculative-parallel-limit": 6,
-          "network.ssl_tokens_cache_capacity": 2048,
-          "browser.cache.memory.capacity": -1,
-          "browser.sessionhistory.max_total_viewers": 4,
-          "accessibility.force_disabled": 1,
-          "places.history.expiration.max_pages": 20000,
-          "pdfjs.annotationEditorMode": 0,
-          "pdfjs.capCanvasAreaFactor": -1,
-        };
-
-        for (const [pref, val] of Object.entries(boolPrefs)) {
-          if (Services.prefs.getBoolPref(pref, !val) !== val) {
-            Services.prefs.setBoolPref(pref, val);
-          }
-        }
-
-        for (const [pref, val] of Object.entries(intPrefs)) {
-          if (Services.prefs.getIntPref(pref, val + 1) !== val) {
-            Services.prefs.setIntPref(pref, val);
-          }
-        }
-
-        Nebula.logger.log("🚀 [Performance] System and network optimizations applied.");
-      } catch (err) {
-        Nebula.logger.error("Failed to apply performance preferences: " + err);
-      }
-    }
-  }
-
   // ========== NebulaDirectFaviconModule ==========
   class NebulaDirectFaviconModule {
     constructor() {
@@ -2226,12 +1720,22 @@
       this._checkTab(tab);
     }
 
+    _isGenericIcon(img) {
+      if (!img) return true;
+      return (
+        img.startsWith("data:image/svg+xml") ||
+        img.startsWith("chrome://") ||
+        img.startsWith("resource://") ||
+        img.includes("defaultFavicon")
+      );
+    }
+
     async _checkTab(tab) {
       if (!tab || tab.closing || tab.hidden) return;
       if (tab.hasAttribute("busy")) return;
 
       const currentImg = tab.getAttribute("image") || tab.image || "";
-      if (currentImg && !currentImg.startsWith("data:image/svg+xml")) return;
+      if (!this._isGenericIcon(currentImg)) return;
 
       const uri = tab.linkedBrowser?.currentURI?.spec || "";
       if (!uri.startsWith("http://") && !uri.startsWith("https://")) return;
@@ -2250,19 +1754,33 @@
       this._inProgress.add(checkKey);
 
       try {
-        const candidates = [
-          `${origin}/favicon.ico`,
-          `${origin}/favicon.png`,
-        ];
+        const candidates = [];
+        const nativeIcon =
+          tab.linkedBrowser?.mIconURL ||
+          (typeof gBrowser?.getIcon === "function" ? gBrowser.getIcon(tab) : "");
+        if (
+          nativeIcon &&
+          !this._isGenericIcon(nativeIcon) &&
+          (nativeIcon.startsWith("http://") || nativeIcon.startsWith("https://"))
+        ) {
+          candidates.push(nativeIcon);
+        }
+        candidates.push(`${origin}/favicon.ico`);
+        candidates.push(`${origin}/favicon.png`);
+        candidates.push(`${origin}/apple-touch-icon.png`);
 
         let foundDataUrl = null;
 
         for (const candUrl of candidates) {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
           try {
-            const res = await window.fetch(candUrl, { credentials: "include" });
+            const res = await window.fetch(candUrl, {
+              credentials: "include",
+              signal: controller.signal,
+            });
             if (res.ok) {
               const ctype = res.headers.get("content-type") || "";
-              // Validate that it's a real image, not an HTML error or challenge page
               if (
                 ctype.includes("image") ||
                 ctype.includes("octet-stream") ||
@@ -2280,16 +1798,28 @@
                 }
               }
             }
-          } catch {}
+          } catch {} finally {
+            clearTimeout(timeoutId);
+          }
         }
 
-        // Fallback: If fetch had CORS issues but image loads via chrome Image
+        // Fallback: Si fetch tuvo bloqueo CORS pero la imagen carga vía Image nativa
         if (!foundDataUrl) {
           for (const candUrl of candidates) {
             const loaded = await new Promise((resolve) => {
               const img = new Image();
-              img.onload = () => resolve(candUrl);
-              img.onerror = () => resolve(null);
+              const timer = setTimeout(() => {
+                img.src = "";
+                resolve(null);
+              }, 2000);
+              img.onload = () => {
+                clearTimeout(timer);
+                resolve(candUrl);
+              };
+              img.onerror = () => {
+                clearTimeout(timer);
+                resolve(null);
+              };
               img.src = candUrl;
             });
             if (loaded) {
@@ -2301,7 +1831,7 @@
 
         if (foundDataUrl) {
           const nowImg = tab.getAttribute("image") || tab.image || "";
-          if (!nowImg || nowImg.startsWith("data:image/svg+xml")) {
+          if (this._isGenericIcon(nowImg)) {
             tab.setAttribute("image", foundDataUrl);
             if (window.gBrowser && typeof gBrowser.setIcon === "function") {
               try {
@@ -2338,16 +1868,12 @@
   // Register Nebula Modules
   Nebula.register(NebulaPolyfillModule);
   Nebula.register(NebulaGradientSliderModule);
-  //Nebula.register(NebulaTitlebarBackgroundModule); // NOT NEEDED ANYMORE (Zen handles titlebar background natively)
-  //Nebula.register(NebulaNavbarBackgroundModule); NOT NEEDED ANYMORE
-  Nebula.register(NebulaURLBarBackgroundModule);
   Nebula.register(NebulaMediaCoverArtModule);
   Nebula.register(NebulaMenuModule);
   Nebula.register(NebulaCtrlTabDualBackgroundModule);
   Nebula.register(NebulaPDFHelperModule);
   Nebula.register(NebulaStartupTabFixModule);
   Nebula.register(NebulaWindowRestoreModule);
-  Nebula.register(NebulaPerformanceModule);
   Nebula.register(NebulaDirectFaviconModule);
 
   // Start the core

@@ -47,11 +47,7 @@ statuspanel {
   scrollbar-width: none !important;
 }
 
-/* 4. Mejor PiP (Estilos completos cargados desde nebula/modules/better-pip.css) */
-
-/* 5-6. Reproductor multimedia y Ctrl+Tab → nebula/modules/miniplayer.css y general-ui.css */
-
-/* 7. Centrar URL en la barra de direcciones */
+/* 4. Centrar URL en la barra de direcciones */
 
 #urlbar .urlbar-input,
 #urlbar-input,
@@ -61,21 +57,7 @@ statuspanel {
   position: relative !important;
 }
 
-.urlbar-background {
-  background-color: var(--zen-toolbar-element-bg) !important;
-  border-radius: 8px !important;
-  transition: none !important;
-}
-
-/* 8-9. Notas musicales y escala Mac OS → nebula/modules/miniplayer.css y general-ui.css */
-
-/* 9. Escala de botones estilo Mac OS (funciona solo desde userChrome directo) */
-.titlebar-buttonbox {
-  scale: 0.95 !important;
-}
-
-/* 10. Ocultar elementos no deseados del menú contextual */
-
+/* 5. Ocultar elementos no deseados del menú contextual */
 #context-openlinkinusercontext-menu,
 #context-openlinkincontainertab,
 #context-zenSplitLink,
@@ -127,7 +109,7 @@ statuspanel {
   display: none !important;
 }
 
-/* 11. Ocultar opciones de la barra lateral de pestañas (menú contextual) */
+/* 6. Ocultar opciones de la barra lateral de pestañas (menú contextual) */
 #zen-context-menu-compact-mode,
 #zen-context-menu-compact-mode + menuseparator,
 #toolbar-context-openANewTab,
@@ -143,7 +125,7 @@ statuspanel {
   display: none !important;
 }
 
-/* 12. Ocultar opciones del menú contextual de las pestañas individuales */
+/* 7. Ocultar opciones del menú contextual de las pestañas individuales */
 #context_openANewTab,
 #tab-context-new-tab-open,
 #context_zenSplitTabs,

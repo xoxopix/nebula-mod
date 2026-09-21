@@ -1,8 +1,3 @@
-/* Add rounded corners to player holder */
-.player-holder {
-  border-radius: 12px !important;
-}
-
 @-moz-document url("chrome://global/content/pictureinpicture/player.xhtml"), url-prefix("chrome://global/content/pictureinpicture/") {
   html,
   body {

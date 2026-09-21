@@ -21,10 +21,6 @@ browser[transparent="true"] {
   --zen-themed-toolbar-bg-transparent: transparent !important;
 }
 
-:root[nebula-zen-gradient-contrast-zero] {
-  --zen-main-browser-background: transparent !important;
-}
-
 /* Required for blur rendering */
 browser {
   transform: translateZ(0);
@@ -159,23 +155,6 @@ browser {
   }
 }
 
-/* ------------------- FLOATING STATUSBAR ------------------- */
-
-#statuspanel {
-  margin: 12px !important;
-  pointer-events: none !important; /* Prevent it from blocking clicks */
-}
-
-#statuspanel-label {
-  border-radius: 9px !important;
-  padding: 4px 12px !important;
-  font-size: 12.5px !important;
-  border: 1px solid var(--nebula-color) !important;
-  background: var(--nebula-color-glass) !important;
-  backdrop-filter: blur(8px) saturate(140%) !important;
-  box-shadow: 0 4px 14px var(--nebula-color-shadow) !important;
-}
-
 /* ------------------- MENU ANIMATIONS ------------------- */
 
 @media not (-moz-pref("nebula-disable-menu-animations")) {
@@ -217,7 +196,6 @@ menuseparator.nebula-menu-anim {
   animation: nebula-menu-separator-enter 0.12s ease-out both !important;
   transform: none !important;
 }
-
 
 /* ------------------ Ctrl+Tab Glassmorphic (Vista previa de pestañas) ------------------- */
 
@@ -336,5 +314,3 @@ menuseparator.nebula-menu-anim {
   margin: 0 !important;
   padding: 0 !important;
 }
-
-
