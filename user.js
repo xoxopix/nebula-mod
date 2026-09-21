@@ -14,6 +14,9 @@ user_pref("network.http.rcwn.enabled", false);
 user_pref("network.http.max-connections", 300);
 user_pref("network.http.max-persistent-connections-per-server", 6);
 user_pref("network.http.max-urgent-start-connections", 4);
+user_pref("network.http.speculative-parallel-limit", 6);
+user_pref("network.dns.disablePrefetch", false);
+user_pref("network.dns.disablePrefetchFromHTTPS", false);
 user_pref("network.ssl_tokens_cache_capacity", 2048);
 /* HTTP/3 activo — más rápido en YouTube, Google, etc. */
 user_pref("network.http.http3.enable", true);
@@ -34,8 +37,10 @@ user_pref("browser.sessionstore.restore_on_demand", true);
 /* ====== Renderizado Multihilo y CPU-Friendly (Gráficos Integrados) ====== */
 user_pref("layout.css.servo.parallel-restyle", true);
 user_pref("gfx.webrender.all", true);
+user_pref("gfx.webrender.dcomp-video-overlay-win", true);
+user_pref("media.hardware-video-decoding.overlay.enabled", true);
 user_pref("accessibility.force_disabled", 1);
-user_pref("dom.ipc.processPriorityManager.enabled", false);
+user_pref("dom.ipc.processPriorityManager.enabled", true);
 
 /* ====== Mantenimiento y Límite de Historial (Base de Datos Ligera) ====== */
 user_pref("places.history.expiration.max_pages", 20000);

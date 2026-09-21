@@ -1967,11 +1967,11 @@
         const boolPrefs = {
           // Network anti-stall & fast loading
           "network.http.rcwn.enabled": false,
-          "network.http.http3.enable": false,
+          "network.http.http3.enable": true,
           "network.dns.disableIPv6": true,
-          "network.dns.disablePrefetch": true,
-          "network.dns.disablePrefetchFromHTTPS": true,
-          "network.predictor.enabled": false,
+          "network.dns.disablePrefetch": false,
+          "network.dns.disablePrefetchFromHTTPS": false,
+          "network.predictor.enabled": true,
           "network.predictor.enable-prefetch": false,
 
           // Memory & Cache
@@ -1986,7 +1986,9 @@
           // GPU & Multithread rendering
           "layout.css.servo.parallel-restyle": true,
           "gfx.webrender.all": true,
-          "dom.ipc.processPriorityManager.enabled": false,
+          "gfx.webrender.dcomp-video-overlay-win": true,
+          "media.hardware-video-decoding.overlay.enabled": true,
+          "dom.ipc.processPriorityManager.enabled": true,
 
           // Telemetry
           "toolkit.telemetry.enabled": false,
@@ -2013,7 +2015,7 @@
           "network.http.max-connections": 300,
           "network.http.max-persistent-connections-per-server": 6,
           "network.http.max-urgent-start-connections": 4,
-          "network.http.speculative-parallel-limit": 0,
+          "network.http.speculative-parallel-limit": 6,
           "network.ssl_tokens_cache_capacity": 2048,
           "browser.cache.memory.capacity": -1,
           "browser.sessionhistory.max_total_viewers": 4,
