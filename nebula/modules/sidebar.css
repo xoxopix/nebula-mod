@@ -26,22 +26,25 @@
   }
 }
 
-/* --- Titlebar theming --- */
+/* --- Titlebar & Sidebar theming --- */
 
-/* Disable outline */
+.zen-toolbar-background {
+  background-color: var(--nebula-color-glass) !important;
+  backdrop-filter: var(--nebula-glass) !important;
+  -webkit-backdrop-filter: var(--nebula-glass) !important;
+}
+
 .zen-toolbar-background::before,
 .zen-toolbar-background::after {
   outline: none !important;
-  background-color: var(--nebula-color-glass) !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
 /* Titlebar styling */
 :is(html[nebula-compact-mode], :root[zen-compact-mode="true"], #main-window[zen-compact-mode="true"]) #titlebar > .zen-browser-generic-background {
   padding: 8px;
   border-radius: var(--nebula-border-radius, 13px) !important;
-  background-color: transparent !important;
-  backdrop-filter: var(--nebula-glass) !important;
-  -webkit-backdrop-filter: var(--nebula-glass) !important;
 }
 
 :is(html[nebula-compact-mode], :root[zen-compact-mode="true"]):root[zen-right-side="true"] #titlebar {
@@ -188,11 +191,7 @@ scrollbox {
       transition-delay: 0.35s !important;
     }
 
-    #PersonalToolbar:has([open]),
-    #PersonalToolbar:has([aria-expanded="true"]),
-    #PersonalToolbar:has(menupopup[open]),
-    #PersonalToolbar:has(menu[open]),
-    #PersonalToolbar:has(.bookmark-item[open]),
+    #PersonalToolbar:has([open], [aria-expanded="true"]),
     #nav-bar:hover + #PersonalToolbar,
     #PersonalToolbar:hover,
     #PersonalToolbar:focus-within {

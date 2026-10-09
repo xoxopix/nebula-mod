@@ -56,7 +56,7 @@
   }
 }
 
-#zen-main-app-wrapper:not(:has(#zen-welcome)) {
+#zen-main-app-wrapper {
   /* Tab click animations */
   #tabbrowser-tabs:not([movingtab]) {
     .tabbrowser-tab {

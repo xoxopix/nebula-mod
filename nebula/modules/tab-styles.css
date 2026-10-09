@@ -286,7 +286,6 @@ html:not([zen-single-toolbar="true"], [zen-sidebar-expanded="true"])
 
 /* Fallback via root attribute or tab data-favicon-color (Mode 2) */
 :root[nebula-active-tab-glow="2"] .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background,
-:root:has([nebula-active-tab-glow="2"]) .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"]):not([multiselected="true"]) .tab-background,
 .tabbrowser-tab:is([selected], [visuallyselected], [selected="true"], [visuallyselected="true"])[data-favicon-color] .tab-background {
   background:
     radial-gradient(

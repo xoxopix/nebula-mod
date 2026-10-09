@@ -26,6 +26,21 @@ browser {
   transform: translateZ(0);
 }
 
+/* Required for blur rendering behind floating panels in Zen 1.22+ */
+:is(:root[zen-compact-mode="true"], html[nebula-compact-mode]) #tabbrowser-tabpanels .browserSidebarContainer {
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+}
+
+:is(:root[zen-compact-mode="true"], html[nebula-compact-mode]) #zen-appcontent-wrapper {
+  position: relative !important;
+  z-index: 0 !important;
+}
+
+:is(:root[zen-compact-mode="true"], html[nebula-compact-mode]) #navigator-toolbox:not([animate="true"]) {
+  z-index: 100 !important;
+}
+
 /* ---------------------- TABS: NO SHADOW ---------------------- */
 
 @media (-moz-pref("nebula-tabs-no-shadow")) {
@@ -196,6 +211,7 @@ menuseparator.nebula-menu-anim {
   animation: nebula-menu-separator-enter 0.12s ease-out both !important;
   transform: none !important;
 }
+
 
 /* ------------------ Ctrl+Tab Glassmorphic (Vista previa de pestañas) ------------------- */
 

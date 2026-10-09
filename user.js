@@ -1,9 +1,11 @@
 user_pref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
 user_pref("browser.startup.page", 3);
-user_pref("browser.tabs.allow_transparent_browser", false);
-user_pref("widget.windows.mica", true);
-user_pref("widget.windows.mica.toplevel-backdrop", 2);
+user_pref("browser.tabs.allow_transparent_browser", true);
 user_pref("zen.theme.acrylic-elements", true);
+user_pref("zen.theme.acrylic-sidebar", true);
+user_pref("zen.theme.acrylic-urlbar", true);
+
+
 
 /* ====== Optimizaciones de Red (Balanceadas: velocidad + estabilidad) ====== */
 /* Solución pestañas trabadas */
@@ -27,7 +29,7 @@ user_pref("browser.cache.memory.capacity", -1);
 user_pref("browser.cache.disk.smart_size.enabled", true);
 user_pref("browser.sessionhistory.max_total_viewers", 4);
 user_pref("browser.tabs.unloadOnLowMemory", true);
-user_pref("browser.tabs.remote.warmup.enabled", false);
+user_pref("browser.tabs.remote.warmup.enabled", true);
 
 /* ====== Arranque Ultrarrápido (Carga Bajo Demanda) ====== */
 user_pref("browser.sessionstore.restore_on_demand", true);
@@ -35,7 +37,8 @@ user_pref("browser.sessionstore.restore_on_demand", true);
 /* ====== Renderizado Multihilo y CPU-Friendly (Gráficos Integrados) ====== */
 user_pref("layout.css.servo.parallel-restyle", true);
 user_pref("gfx.webrender.all", true);
-user_pref("gfx.webrender.dcomp-video-overlay-win", true);
+user_pref("gfx.webrender.compositor", true);
+user_pref("gfx.webrender.dcomp-win.enabled", true);
 user_pref("media.hardware-video-decoding.overlay.enabled", true);
 user_pref("accessibility.force_disabled", 1);
 user_pref("dom.ipc.processPriorityManager.enabled", true);
@@ -56,6 +59,8 @@ user_pref("pdfjs.enableAltText", false);
 user_pref("pdfjs.enableAltTextForEnglish", false);
 user_pref("pdfjs.enableScripting", false);
 user_pref("pdfjs.enabledCache.state", true);
-user_pref("pdfjs.enableOptimizedPartialRendering", false);
+user_pref("pdfjs.enableOptimizedPartialRendering", true);
 user_pref("pdfjs.capCanvasAreaFactor", -1);
 user_pref("pdfjs.disableAutoFetch", false);
+
+

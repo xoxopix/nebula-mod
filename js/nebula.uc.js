@@ -82,21 +82,6 @@
       return this._modules.find((m) => m._name === name);
     },
 
-    observePresence(selector, attrName) {
-      const update = () => {
-        const found = !!document.querySelector(selector);
-        document.documentElement.toggleAttribute(attrName, found);
-      };
-      const observer = new MutationObserver(update);
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-      });
-      update();
-      return observer;
-    },
-
     init() {
       this.logger.log("⏳ Initializing core...");
       this._initialized = true;
@@ -376,40 +361,22 @@
             }
           }
 
-          // Strategy 2: privileged fetch + createImageBitmap
+          // Strategy 2: load via Image & draw to canvas
           if (!extractedColor && iconUrl) {
             try {
-              let bitmap = null;
-              if (
-                iconUrl.startsWith("http://") ||
-                iconUrl.startsWith("https://") ||
-                iconUrl.startsWith("data:")
-              ) {
-                const res = await window.fetch(iconUrl);
-                const blob = await res.blob();
-                bitmap = await createImageBitmap(blob);
-              } else {
-                const img = new Image();
-                img.src = iconUrl;
-                await new Promise((resolve) => {
-                  if (img.complete && img.naturalWidth > 0) {
-                    resolve();
-                    return;
-                  }
-                  img.onload = resolve;
-                  img.onerror = resolve;
-                });
-                if (img.naturalWidth > 0) {
-                  bitmap = img;
-                }
-              }
-
-              if (bitmap) {
+              const img = new Image();
+              img.src = iconUrl;
+              await new Promise((resolve) => {
+                if (img.complete && img.naturalWidth > 0) return resolve();
+                img.onload = resolve;
+                img.onerror = resolve;
+              });
+              if (img.naturalWidth > 0) {
                 const canvas = document.createElement("canvas");
                 canvas.width = 16;
                 canvas.height = 16;
                 const ctx = canvas.getContext("2d", { willReadFrequently: true });
-                ctx.drawImage(bitmap, 0, 0, 16, 16);
+                ctx.drawImage(img, 0, 0, 16, 16);
                 const imgData = ctx.getImageData(0, 0, 16, 16).data;
                 extractedColor = this._extractDominantFromData(imgData);
               }
@@ -512,40 +479,40 @@
       this.gradientSlider = null;
       this._patched = false;
       this._sliderHandler = this.sync.bind(this);
+      this._boundInput = null;
+      this._boundPopup = null;
 
       // Store original methods without polluting prototype
       this._origMethods = new WeakMap();
     }
 
     init() {
-      this._waitFor(
-        () => document.querySelector("#PanelUI-zen-gradient-generator-opacity"),
-        (slider) => {
-          this.gradientSlider = slider;
-          slider.min = 0.0; // force min opacity
-          slider.addEventListener("input", this._sliderHandler);
-
+      this._boundInput = (e) => {
+        if (e.target?.id === "PanelUI-zen-gradient-generator-opacity") {
+          this.gradientSlider = e.target;
+          e.target.min = 0.0;
           this.sync();
-          this._patchThemePicker();
-        },
-      );
-    }
-
-    _waitFor(fn, callback, maxRetries = 40) {
-      let retries = maxRetries;
-      const tryFind = () => {
-        const el = fn();
-        if (el) return callback(el);
-        if (retries-- > 0) {
-          Nebula.logger.debug?.(
-            `[GradientSlider] Waiting… retries left: ${retries}`,
-          );
-          requestAnimationFrame(tryFind);
-        } else {
-          Nebula.logger.error("❌ [GradientSlider] Target not found.");
         }
       };
-      tryFind();
+      this._boundPopup = (e) => {
+        const slider = e.target?.querySelector?.("#PanelUI-zen-gradient-generator-opacity");
+        if (slider) {
+          this.gradientSlider = slider;
+          slider.min = 0.0;
+          this.sync();
+        }
+      };
+      document.addEventListener("input", this._boundInput);
+      document.addEventListener("popupshowing", this._boundPopup);
+
+      const existing = document.querySelector("#PanelUI-zen-gradient-generator-opacity");
+      if (existing) {
+        this.gradientSlider = existing;
+        existing.min = 0.0;
+        this.sync();
+      }
+
+      this._patchThemePicker();
     }
 
     sync() {
@@ -560,52 +527,49 @@
 
     _patchThemePicker() {
       if (this._patched) return;
+      const proto =
+        window.nsZenThemePicker?.prototype ||
+        window.browser?.gZenThemePicker?.constructor?.prototype;
+      if (!proto?.blendWithWhiteOverlay) return;
 
-      this._waitFor(
-        () =>
-          window.nsZenThemePicker?.prototype ||
-          window.browser?.gZenThemePicker?.constructor?.prototype,
-        (proto) => {
-          if (!proto?.blendWithWhiteOverlay) return;
+      this._origMethods.set(proto, proto.blendWithWhiteOverlay);
+      const moduleInstance = this;
 
-          // Save original
-          this._origMethods.set(proto, proto.blendWithWhiteOverlay);
+      proto.blendWithWhiteOverlay = function (baseColor, opacity) {
+        const val = +moduleInstance.gradientSlider?.value ?? opacity;
+        if (val === 0) {
+          if (Array.isArray(baseColor)) {
+            return `rgba(${baseColor.join(",")},0)`;
+          }
+          if (
+            typeof baseColor === "string" &&
+            baseColor.startsWith("rgb")
+          ) {
+            return baseColor.replace(/rgb(a)?\(([^)]+)\)/, "rgba($2, 0)");
+          }
+          return "rgba(0,0,0,0)";
+        }
+        return moduleInstance._origMethods
+          .get(proto)
+          .call(this, baseColor, opacity);
+      };
 
-          const moduleInstance = this;
-
-          proto.blendWithWhiteOverlay = function (baseColor, opacity) {
-            const val = +moduleInstance.gradientSlider?.value ?? opacity;
-            if (val === 0) {
-              if (Array.isArray(baseColor)) {
-                return `rgba(${baseColor.join(",")},0)`;
-              }
-              if (
-                typeof baseColor === "string" &&
-                baseColor.startsWith("rgb")
-              ) {
-                return baseColor.replace(/rgb(a)?\(([^)]+)\)/, "rgba($2, 0)");
-              }
-              return "rgba(0,0,0,0)";
-            }
-            // Call the original method with the correct context
-            return moduleInstance._origMethods
-              .get(proto)
-              .call(this, baseColor, opacity);
-          };
-
-          this._patched = true;
-          Nebula.logger.log(
-            "✅ [GradientSlider] Patched blendWithWhiteOverlay",
-          );
-        },
+      this._patched = true;
+      Nebula.logger.log(
+        "✅ [GradientSlider] Patched blendWithWhiteOverlay",
       );
     }
 
     destroy() {
-      if (this.gradientSlider) {
-        this.gradientSlider.removeEventListener("input", this._sliderHandler);
-        this.gradientSlider = null;
+      if (this._boundInput) {
+        document.removeEventListener("input", this._boundInput);
+        this._boundInput = null;
       }
+      if (this._boundPopup) {
+        document.removeEventListener("popupshowing", this._boundPopup);
+        this._boundPopup = null;
+      }
+      this.gradientSlider = null;
 
       if (this._patched) {
         const proto =
@@ -1051,13 +1015,8 @@
       if (item.hidden || item.getAttribute("hidden") === "true" || item.collapsed) {
         return false;
       }
-      try {
-        const style = window.getComputedStyle(item);
-        if (style.display === "none" || style.visibility === "hidden") {
-          return false;
-        }
-      } catch {
-        return false;
+      if (typeof item.checkVisibility === "function") {
+        return item.checkVisibility();
       }
       return true;
     }
@@ -1589,16 +1548,16 @@
         }
       };
 
-      const scheduleTimes = [50, 150, 300, 600, 1000, 1500];
-      scheduleTimes.forEach((delay) => setTimeout(executeRestore, delay));
-
       if (
         typeof SessionStore !== "undefined" &&
         SessionStore.promiseInitialized
       ) {
         SessionStore.promiseInitialized.then(() => {
-          scheduleTimes.forEach((delay) => setTimeout(executeRestore, delay));
+          executeRestore();
+          setTimeout(executeRestore, 300);
         });
+      } else {
+        setTimeout(executeRestore, 300);
       }
 
       if (window.gZenWorkspaces?.promiseInitialized) {
@@ -1688,6 +1647,10 @@
       }
 
       window.gBrowser.tabContainer.addEventListener(
+        "TabOpen",
+        this._resolveTabFavicon
+      );
+      window.gBrowser.tabContainer.addEventListener(
         "TabAttrModified",
         this._resolveTabFavicon
       );
@@ -1696,7 +1659,7 @@
         this._resolveTabFavicon
       );
 
-      // Check existing tabs that have already finished loading
+      // Check existing tabs
       for (const tab of window.gBrowser.tabs) {
         this._checkTab(tab);
       }
@@ -1708,16 +1671,16 @@
       const tab = e?.target;
       if (!tab || tab.tagName !== "tab") return;
 
-      // Only act when busy is removed (page finished loading) or on TabSelect/image change
+      let force = false;
       if (e.type === "TabAttrModified") {
         const changed = e.detail?.changed || [];
-        if (!changed.includes("busy") && !changed.includes("image")) return;
+        if (!changed.includes("busy") && !changed.includes("image") && !changed.includes("label")) return;
+        if (changed.includes("busy") && !tab.hasAttribute("busy")) {
+          force = true;
+        }
       }
 
-      // If tab is still loading, wait until it finishes so cookies and clearance are ready
-      if (tab.hasAttribute("busy")) return;
-
-      this._checkTab(tab);
+      this._checkTab(tab, force);
     }
 
     _isGenericIcon(img) {
@@ -1730,9 +1693,8 @@
       );
     }
 
-    async _checkTab(tab) {
+    async _checkTab(tab, force = false) {
       if (!tab || tab.closing || tab.hidden) return;
-      if (tab.hasAttribute("busy")) return;
 
       const currentImg = tab.getAttribute("image") || tab.image || "";
       if (!this._isGenericIcon(currentImg)) return;
@@ -1750,7 +1712,11 @@
       }
 
       const checkKey = `${origin}::${tab.linkedBrowser?.browserId || ""}`;
-      if (this._inProgress.has(checkKey)) return;
+      if (force) {
+        this._inProgress.delete(checkKey);
+      } else if (this._inProgress.has(checkKey)) {
+        return;
+      }
       this._inProgress.add(checkKey);
 
       try {
@@ -1767,75 +1733,38 @@
         }
         candidates.push(`${origin}/favicon.ico`);
         candidates.push(`${origin}/favicon.png`);
-        candidates.push(`${origin}/apple-touch-icon.png`);
 
-        let foundDataUrl = null;
+        const testImage = (url) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            const timer = setTimeout(() => {
+              img.src = "";
+              resolve(null);
+            }, 1800);
+            img.onload = () => {
+              clearTimeout(timer);
+              resolve(url);
+            };
+            img.onerror = () => {
+              clearTimeout(timer);
+              resolve(null);
+            };
+            img.src = url;
+          });
 
+        let foundUrl = null;
         for (const candUrl of candidates) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000);
-          try {
-            const res = await window.fetch(candUrl, {
-              credentials: "include",
-              signal: controller.signal,
-            });
-            if (res.ok) {
-              const ctype = res.headers.get("content-type") || "";
-              if (
-                ctype.includes("image") ||
-                ctype.includes("octet-stream") ||
-                ctype.includes("icon")
-              ) {
-                const blob = await res.blob();
-                if (blob && blob.size > 20) {
-                  foundDataUrl = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = () => resolve(null);
-                    reader.readAsDataURL(blob);
-                  });
-                  if (foundDataUrl) break;
-                }
-              }
-            }
-          } catch {} finally {
-            clearTimeout(timeoutId);
-          }
+          foundUrl = await testImage(candUrl);
+          if (foundUrl) break;
         }
 
-        // Fallback: Si fetch tuvo bloqueo CORS pero la imagen carga vía Image nativa
-        if (!foundDataUrl) {
-          for (const candUrl of candidates) {
-            const loaded = await new Promise((resolve) => {
-              const img = new Image();
-              const timer = setTimeout(() => {
-                img.src = "";
-                resolve(null);
-              }, 2000);
-              img.onload = () => {
-                clearTimeout(timer);
-                resolve(candUrl);
-              };
-              img.onerror = () => {
-                clearTimeout(timer);
-                resolve(null);
-              };
-              img.src = candUrl;
-            });
-            if (loaded) {
-              foundDataUrl = loaded;
-              break;
-            }
-          }
-        }
-
-        if (foundDataUrl) {
+        if (foundUrl) {
           const nowImg = tab.getAttribute("image") || tab.image || "";
           if (this._isGenericIcon(nowImg)) {
-            tab.setAttribute("image", foundDataUrl);
+            tab.setAttribute("image", foundUrl);
             if (window.gBrowser && typeof gBrowser.setIcon === "function") {
               try {
-                gBrowser.setIcon(tab, foundDataUrl);
+                gBrowser.setIcon(tab, foundUrl);
               } catch {}
             }
             if (tab.selected && window.Nebula) {
@@ -1851,6 +1780,10 @@
 
     destroy() {
       if (window.gBrowser?.tabContainer) {
+        window.gBrowser.tabContainer.removeEventListener(
+          "TabOpen",
+          this._resolveTabFavicon
+        );
         window.gBrowser.tabContainer.removeEventListener(
           "TabAttrModified",
           this._resolveTabFavicon

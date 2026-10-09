@@ -1,18 +1,22 @@
 /* ------------------ URLBar styling ------------------ */
 
 /* When URL bar is open - smooth visual effect */
-#urlbar[open] .urlbar-background {
+#urlbar:is([open], [breakout-extend]) .urlbar-background {
   border-radius: 15px !important;
-  background: light-dark(rgb(255 255 255 / 85%), rgb(0 0 0 / 40%)) !important;
+  background-color: var(--nebula-color-glass) !important;
+  background: var(--nebula-color-glass) !important;
+  backdrop-filter: var(--nebula-glass) !important;
+  -webkit-backdrop-filter: var(--nebula-glass) !important;
   outline: none !important;
   scale: 1.01 !important;
 }
 
-#urlbar[open] {
-  box-shadow: 0 20px 40px var(--nebula-color-shadow);
+#urlbar:is([open], [breakout-extend]) {
+  box-shadow: 0 20px 40px var(--nebula-color-shadow) !important;
   border-radius: 15px !important;
   overflow: hidden !important;
   backdrop-filter: var(--nebula-glass) !important;
+  -webkit-backdrop-filter: var(--nebula-glass) !important;
   animation: fade-in 0.2s ease-in !important;
 }
 
@@ -21,9 +25,9 @@
   --urlbarview-separator-color: transparent !important;
 }
 
-#urlbar[open] .urlbarView-body-inner,
-#urlbar[open] .urlbarView,
-#urlbar[open] .search-one-offs {
+#urlbar:is([open], [breakout-extend]) .urlbarView-body-inner,
+#urlbar:is([open], [breakout-extend]) .urlbarView,
+#urlbar:is([open], [breakout-extend]) .search-one-offs {
   border-top: none !important;
 }
 
