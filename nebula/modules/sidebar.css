@@ -160,6 +160,22 @@ scrollbar {
   display: none !important;
 }
 
+/* Hide sidebar resizer splitter line (appears as a vertical bar when expanding) */
+#zen-sidebar-splitter,
+#sidebar-splitter,
+#sidebar-launcher-splitter {
+  opacity: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  transition: none !important;
+}
+
+#zen-sidebar-splitter:is(:hover, [zen-resizing="true"]) {
+  opacity: 0 !important;
+  background: transparent !important;
+}
+
 /* Hide the overflow background gradient */
 .workspace-arrowscrollbox[overflowing] {
   --zen-scrollbar-overflow-background: transparent !important;
