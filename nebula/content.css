@@ -1,3 +1,23 @@
 /* content import */
 @import url("content/better-pdf.css");
 @import url("content/sine-settings-cards.css");
+
+/* Hide sidebar scrollbars (History, Bookmarks, Synced Tabs) */
+@-moz-document url-prefix("chrome://browser/content/places/"),
+               url-prefix("chrome://browser/content/sidebar/"),
+               url-prefix("chrome://browser/content/syncedtabs/"),
+               url-prefix("about:places") {
+  :root,
+  body,
+  tree,
+  treechildren,
+  scrollbox,
+  #historyTree,
+  #bookmarks-view {
+    scrollbar-width: none !important;
+  }
+
+  scrollbar {
+    display: none !important;
+  }
+}

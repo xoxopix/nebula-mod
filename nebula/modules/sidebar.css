@@ -129,8 +129,22 @@
 /* ------------------------- GENERAL SIDEBAR -------------------------- */
 
 /* hide scrollbar */
-scrollbox {
+scrollbox,
+#sidebar-box,
+#sidebar-box *,
+#sidebar,
+.sidebar-panel,
+#zen-tabs-wrapper,
+#tabbrowser-tabs,
+.workspace-arrowscrollbox,
+#zen-sidebar-panels-wrapper {
   scrollbar-width: none !important;
+}
+
+#sidebar-box scrollbar,
+#tabbrowser-tabs scrollbar,
+.workspace-arrowscrollbox scrollbar {
+  display: none !important;
 }
 
 /* Hide the overflow background gradient */
