@@ -130,20 +130,33 @@
 
 /* hide scrollbar */
 scrollbox,
+arrowscrollbox,
+arrowscrollbox::part(scrollbox),
+arrowscrollbox[overflowing]::part(scrollbox),
+.workspace-arrowscrollbox,
+.workspace-arrowscrollbox::part(scrollbox),
+.workspace-arrowscrollbox[overflowing]::part(scrollbox),
+#tabbrowser-arrowscrollbox,
+#tabbrowser-arrowscrollbox::part(scrollbox),
+#tabbrowser-tabs,
+#tabbrowser-tabs *::part(scrollbox),
 #sidebar-box,
+#sidebar-box *::part(scrollbox),
 #sidebar-box *,
 #sidebar,
 .sidebar-panel,
 #zen-tabs-wrapper,
-#tabbrowser-tabs,
-.workspace-arrowscrollbox,
-#zen-sidebar-panels-wrapper {
+#zen-sidebar-panels-wrapper,
+.zen-essentials-container {
   scrollbar-width: none !important;
+  scrollbar-color: transparent transparent !important;
 }
 
 #sidebar-box scrollbar,
 #tabbrowser-tabs scrollbar,
-.workspace-arrowscrollbox scrollbar {
+.workspace-arrowscrollbox scrollbar,
+arrowscrollbox scrollbar,
+scrollbar {
   display: none !important;
 }
 

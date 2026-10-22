@@ -9,15 +9,23 @@
                url-prefix("about:places") {
   :root,
   body,
-  tree,
-  treechildren,
-  scrollbox,
-  #historyTree,
-  #bookmarks-view {
+  *,
+  *::before,
+  *::after {
     scrollbar-width: none !important;
+    scrollbar-color: transparent transparent !important;
   }
 
-  scrollbar {
+  ::-webkit-scrollbar {
     display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  scrollbar,
+  scrollbar * {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
   }
 }
